@@ -142,10 +142,12 @@ module FetchUnit_Test;
 		clock = 0;
 		#1;
 		cacheUpdateEnable = 0;
+		/*
 		clock = 1;
 		#1;
 		clock = 0;
 		#1;
+		*/
 		
 		newCacheline = 0;//REMEMBER: RESET THESE AFTER A CACHELINE UPDATE!!!!!!
 		newIndex = 0;

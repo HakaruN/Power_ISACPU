@@ -7,7 +7,7 @@ module FetchUnit #( parameter offsetSize = 5, parameter indexSize = 8, parameter
 	//command
 	input wire clock_i,
 	input wire reset_i,
-	input wire flushPipleine_i,
+	input wire flushPipeline_i,
 	//fetch in
 	input wire enable_i,
 	input wire [0:tagSize-1] tag_i,

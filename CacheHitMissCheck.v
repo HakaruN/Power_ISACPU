@@ -29,7 +29,7 @@ module CacheHitMissCheck #( parameter offsetSize = 5, parameter indexSize = 8, p
 
 	always @(posedge clock_i)
 	begin
-		if(flushPipeline_i == 1)
+		if(flushPipeline_i == 1 || isCacheMissResolved_i == 1)
 		begin
 			$display("Stage 2 flushing pipeline");
 			tag_o <= 0;
@@ -42,40 +42,31 @@ module CacheHitMissCheck #( parameter offsetSize = 5, parameter indexSize = 8, p
 			newOffset_o <= 0;			
 		end
 		else
-		begin
-			if(isCacheMissResolved_i == 1)
-			begin
-				isCacheMiss_o <= 0;
-				tag_o <= 0;
-				index_o <= 0;
-				offset_o <= 0;
-				enable_o <= 0;
-			end
-			
-		if(enable_i == 1)
 		begin			
-			//	Check valid bit:							//check tags match	
-			if(((queriedTag_i & 52'h8000000000000) > 0) && (queriedTag_i[1:tagSize] == fetchTag_i))
-			begin//cache hit
-				tag_o <= fetchTag_i;
-				index_o <= index_i;
-				offset_o <= offset_i;
-				isCacheMiss_o <= 0;
-				enable_o <= 1;
-				$display("Stage 2 cache hit");
+			if(enable_i == 1)
+			begin			
+				//	Check valid bit:							//check tags match	
+				if(((queriedTag_i & 52'h8000000000000) > 0) && (queriedTag_i[1:tagSize] == fetchTag_i))
+				begin//cache hit
+					tag_o <= fetchTag_i;
+					index_o <= index_i;
+					offset_o <= offset_i;
+					isCacheMiss_o <= 0;
+					enable_o <= 1;
+					$display("Stage 2 cache hit");
+				end
+				else//cache miss
+				begin
+					newTag_o <= fetchTag_i;
+					newIndex_o <= index_i;
+					newOffset_o <= offset_i;
+					isCacheMiss_o <= 1;				
+					enable_o <= 0;
+					$display("Stage 2 cache miss");
+				end
 			end
-			else//cache miss
-			begin
-				newTag_o <= fetchTag_i;
-				newIndex_o <= index_i;
-				newOffset_o <= offset_i;
-				isCacheMiss_o <= 1;				
-				enable_o <= 0;
-				$display("Stage 2 cache miss");
-			end
-		end
-		else
-		enable_o <= 0;
+			else
+			enable_o <= 0;
 		end		
 	end
 

@@ -41,11 +41,11 @@ module CachelineParser #( parameter offsetSize = 5, parameter indexSize = 8, par
 	begin
 		if(flushPipeline_i == 1)
 		begin
-			fetchedPayload_o = 0;
-			enable_o = 0;
-			tag_o = 0;
-			index_o = 0;
-			offset_o = 0;
+			fetchedPayload_o <= 0;
+			enable_o <= 0;
+			tag_o <= 0;
+			index_o <= 0;
+			offset_o <= 0;
 			$display("Stage 4 flushing pipeline");
 		end
 		else
