@@ -10,7 +10,7 @@
 //Also when reading; updateEnable_i must be set to zero and when writing fetchEnable_i must be set to zero as this will
 //result in undefined behaviour due to timing errors.
 //////////////////////////////////////////////////////////////////////////////////
-module CacheMemory#( parameter offsetSize = 5, parameter indexSize = 8, parameter tagSize = 64 - (offsetSize + indexSize),
+module CacheMemory #( parameter offsetSize = 5, parameter indexSize = 8, parameter tagSize = 64 - (offsetSize + indexSize),
 	parameter cachelineSizeInBits = (2**offsetSize)*8, parameter numCachelines = 2**indexSize)(
 	//command
 	input wire clock_i,
@@ -49,8 +49,7 @@ module CacheMemory#( parameter offsetSize = 5, parameter indexSize = 8, paramete
 	);
 	
 	always @(posedge clock_i)
-	begin
-	
+	begin	
 		//update buffers
 		bypassEnable <= fetchEnable_i;
 		if((fetchEnable_i == 1) && (updateEnable_i == 0))//if were fetching and not updating
