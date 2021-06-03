@@ -31,6 +31,7 @@ module CacheTagHitMissCheck_Test;
 	reg [0:51] queriedTag;
 	reg [0:7] index;
 	reg [0:4] offset;
+	reg cacheUpdate;
 
 	// Outputs
 	wire [0:50] newTag_o;
@@ -44,16 +45,22 @@ module CacheTagHitMissCheck_Test;
 
 	// Instantiate the Unit Under Test (UUT)
 	CacheHitMissCheck uut (
+		//command
 		.clock_i(clock), 
 		.enable_i(enable), 
+		//fetch in
 		.fetchTag_i(fetchTag), 
 		.queriedTag_i(queriedTag), 
 		.index_i(index), 
 		.offset_i(offset), 
+		//cache miss in
+		.isCacheMissResolved_i(cacheUpdate),
+		//cache miss out
 		.newTag_o(newTag_o), 
 		.newIndex_o(newIndex_o), 
 		.newOffset_o(newOffset_o), 
 		.isCacheMiss_o(isCacheMiss_o), 
+		//fetch out
 		.tag_o(tag_o), 
 		.index_o(index_o), 
 		.offset_o(offset_o), 
@@ -68,6 +75,7 @@ module CacheTagHitMissCheck_Test;
 		queriedTag = 0;
 		index = 0;
 		offset = 0;
+		cacheUpdate = 0;
 		#1;
 		
 		///
@@ -107,6 +115,7 @@ module CacheTagHitMissCheck_Test;
 		#1;
 		clock = 0;
 		#1;
+		cacheUpdate = 1;//clear the cache miss state
 		$display("isCacheMiss: ", isCacheMiss_o);
 		$display("\n");
 		
@@ -119,6 +128,7 @@ module CacheTagHitMissCheck_Test;
 		#1;
 		clock = 0;
 		#1;
+		cacheUpdate = 1;//clear the cache miss state
 		$display("isCacheMiss: ", isCacheMiss_o);
 		$display("\n");
 		
@@ -131,6 +141,7 @@ module CacheTagHitMissCheck_Test;
 		#1;
 		clock = 0;
 		#1;
+		cacheUpdate = 1;//clear the cache miss state
 		$display("isCacheMiss: ", isCacheMiss_o);
 
 	end

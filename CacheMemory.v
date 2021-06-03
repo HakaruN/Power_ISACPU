@@ -9,14 +9,13 @@
 //accessed address to be (index_i | newIndex_i)
 //Also when reading; updateEnable_i must be set to zero and when writing fetchEnable_i must be set to zero as this will
 //result in undefined behaviour due to timing errors.
-//NOTE: This unit has higher latency as the output requires extra buffering due to the fact that the fetched cacheline can come
-//from either cache or the memory higherarchy
 //////////////////////////////////////////////////////////////////////////////////
 module CacheMemory #( parameter offsetSize = 5, parameter indexSize = 8, parameter tagSize = 64 - (offsetSize + indexSize),
 	parameter cachelineSizeInBits = (2**offsetSize)*8, parameter numCachelines = 2**indexSize)(
 	//command
 	input wire clock_i,
 	input wire reset_i,
+	input wire flushPipeline_i,
 	//fetch in
 	input wire fetchEnable_i,
 	input wire [0:tagSize-1] tag_i,
@@ -45,7 +44,6 @@ module CacheMemory #( parameter offsetSize = 5, parameter indexSize = 8, paramet
 	//output buffer
 	wire [0:cachelineSizeInBits-1] cachelineFromMemory;
 	
-	
 	//cache memory
 	L1I_Memory l1I_Memory (
 	.clka(clock_i),
@@ -58,43 +56,61 @@ module CacheMemory #( parameter offsetSize = 5, parameter indexSize = 8, paramet
 	
 	always @(posedge clock_i)
 	begin	
-		//update buffers
-		bypassEnable <= fetchEnable_i;
-		if((fetchEnable_i == 1) && (updateEnable_i == 0))//if were fetching and not updating
-		begin			
-			bypassTag <= tag_i;
-			bypassIndex <= index_i;
-			bypassOffset <= offset_i;
-		end
-		else if((fetchEnable_i == 0) && (updateEnable_i == 1))//if were updating and not fetching
-			$display("Writing to instruction L1I cache");
-		else if((fetchEnable_i == 1) && (updateEnable_i == 1))
-			$display("TIMING ERROR: Instruction cache memory canot read and write at the same time (collision is possible)");
-			
-		//write out buffers
-		if((bypassEnable == 1) && (updateEnable_i == 0))
+		if(flushPipeline_i == 1)
 		begin
-			tag_o <= bypassTag;
-			index_o <= bypassIndex;
-			offset_o <= bypassOffset;
-			enable_o <= bypassEnable;
-			cacheline_o <= cachelineFromMemory;
-		end
-		else if((bypassEnable == 0) && (updateEnable_i == 1))
-		begin
-			tag_o <= newTag_i;
-			index_o <= newIndex_i;
-			offset_o <= newOffset_i;
-			enable_o <= updateEnable_i;
-			cacheline_o <= newCacheline_i;
-			$display("asdfasdf");
-		end
-		else if((bypassEnable == 1) && (updateEnable_i == 1))
-		begin
-			$display("TIMING ERROR: Cache memory canot read and write at the same time (collision is possible)");
+			$display("Stage 3 flushing pipeline");
+			bypassTag <= 0;
+			bypassIndex <= 0;
+			bypassOffset <= 0;
+			bypassEnable <= 0;
+			tag_o <= 0;
+			index_o <= 0;
+			offset_o <= 0;
+			cacheline_o <= 0;
+			enable_o <= 0;
 		end
 		else
-			enable_o <= 0;		
+		begin
+			//update buffers
+			bypassEnable <= fetchEnable_i;
+			if((fetchEnable_i == 1) && (updateEnable_i == 0))//if were fetching and not updating
+			begin			
+				bypassTag <= tag_i;
+				bypassIndex <= index_i;
+				bypassOffset <= offset_i;
+				$display("Stage 3 cycle 1 fetching");
+			end
+			else if((fetchEnable_i == 0) && (updateEnable_i == 1))//if were updating and not fetching
+				$display("Writing to instruction L1I cache");
+			else if((fetchEnable_i == 1) && (updateEnable_i == 1))
+				$display("TIMING ERROR: Instruction cache memory canot read and write at the same time (collision is possible)");
+				
+			//write out buffers
+			if((bypassEnable == 1) && (updateEnable_i == 0))
+			begin
+				tag_o <= bypassTag;
+				index_o <= bypassIndex;
+				offset_o <= bypassOffset;
+				enable_o <= bypassEnable;
+				cacheline_o <= cachelineFromMemory;
+				$display("Stage 3 writing buffers out");
+			end
+			else if((bypassEnable == 0) && (updateEnable_i == 1))
+			begin
+				tag_o <= newTag_i;
+				index_o <= newIndex_i;
+				offset_o <= newOffset_i;
+				enable_o <= updateEnable_i;
+				cacheline_o <= newCacheline_i;
+				$display("Stage 3 updating cachelines");
+			end
+			else if((bypassEnable == 1) && (updateEnable_i == 1))
+			begin
+				$display("TIMING ERROR: Cache memory canot read and write at the same time (collision is possible)");
+			end
+			else
+				enable_o <= 0;		
+		end
 	end
 	 
 endmodule

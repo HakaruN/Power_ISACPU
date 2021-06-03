@@ -68,7 +68,9 @@ module CacheMemory_Test;
 		.enable_o(enable_o)
 	);
 	
-
+////
+//KNOWN QUIRK/BUG? Ther must be a cycle between a read and a write otherwise a timing error will occour, this issue does not exist outside of test settings
+////
 
 	initial begin
 		// Initialize Inputs
@@ -152,6 +154,11 @@ module CacheMemory_Test;
 		#1;
 		clock = 0;
 		#1;
+		fetchEnable = 0;
+		clock = 1;
+		#1;
+		clock = 0;
+		#1;
 		//Write to cacheline 1
 		updateEnable = 1; fetchEnable = 0;
 		newCacheline = 256'h88888888_99999999_AAAAAAAA_BBBBBBBB_CCCCCCCC_DDDDDDDD_EEEEEEEE_FFFFFFFF;
@@ -160,6 +167,7 @@ module CacheMemory_Test;
 		#1;
 		clock = 0;
 		#1;
+		/*
 		//read from cacheline 1
 		updateEnable = 0; fetchEnable = 1;
 		newIndex = 0; index = 1;
@@ -169,6 +177,7 @@ module CacheMemory_Test;
 		clock = 0;
 		#1;
 		
+		
 		//allow data to come out
 		updateEnable = 0; fetchEnable = 0;
 		newIndex = 0; index = 0;
@@ -176,6 +185,7 @@ module CacheMemory_Test;
 		#1;
 		clock = 0;
 		#1;
+		*/
 		
 	end
       

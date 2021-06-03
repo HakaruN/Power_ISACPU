@@ -36,6 +36,7 @@ module FetchUnit_Test;
 	reg [0:4] newOffset;
 	reg [0:255] newCacheline;
 	reg cacheUpdateEnable;
+	reg flushPipeline;
 
 	// Outputs
 	wire [0:50] tag_o;
@@ -53,6 +54,7 @@ module FetchUnit_Test;
 		//control
 		.clock_i(clock), 
 		.reset_i(reset), 
+		.flushPipleine_i(flushPipeline),
 		//fetch input
 		.enable_i(enable), 
 		.tag_i(tag), 
@@ -76,6 +78,11 @@ module FetchUnit_Test;
 		.newOffset_o(newOffset_o), 
 		.isCacheMiss_o(isCacheMiss_o)
 	);
+	
+	//////
+	//TODO: Track down why the enable signal doesnt return to zero after an instruction fetch
+	//////
+	
 
 	initial begin
 		// Initialize Inputs
@@ -90,6 +97,7 @@ module FetchUnit_Test;
 		newOffset = 0;
 		newCacheline = 0;
 		cacheUpdateEnable = 0;
+		flushPipeline = 0;
 
 		//reset
 		reset = 1;
@@ -99,7 +107,7 @@ module FetchUnit_Test;
 		clock = 0;
 		#1;
 		
-		//try to fetch an instruction that isn't in cache yet (ought to result in cache miss)
+		////try to fetch an instruction that isn't in cache yet (ought to result in cache miss)
 		enable = 1;
 		tag = 5;
 		index = 8;
@@ -124,26 +132,45 @@ module FetchUnit_Test;
 		
 		//now that we've had a cache miss, we'll write it back
 		newTag = tag;
-		newIndex = index;
+		index = 0;
+		newIndex = 8;
 		newOffset = 0;
-		newCacheline = 256'hFFFFFFFF_EEEEEEEE_DDDDDDDD_CCCCCCCC_BBBBBBBB_AAAAAAAA_99999999_88888888;;
+		newCacheline = 256'hFFFFFFFF_EEEEEEEE_DDDDDDDD_CCCCCCCC_BBBBBBBB_AAAAAAAA_99999999_88888888;
+		cacheUpdateEnable = 1;
+		clock = 1;
+		#1;
+		clock = 0;
+		#1;
 		cacheUpdateEnable = 0;
 		clock = 1;
 		#1;
 		clock = 0;
 		#1;
-		cacheUpdateEnable = 1;
+		
+		newCacheline = 0;//REMEMBER: RESET THESE AFTER A CACHELINE UPDATE!!!!!!
+		newIndex = 0;
+		cacheUpdateEnable = 0;
 		clock = 1;
 		#1;
 		clock = 0;//by this point the data should be available to be parsed
 		#1;
+		
 		cacheUpdateEnable = 0;		
 		clock = 1;
 		#1;
 		clock = 0;//by this point the data ought to be parsed and instruction available on the output
 		#1;
 		
-		//Now that the cacheline has been loaded, lets fetch the next instruction
+		
+		//flush pipeline first
+		////Now that the cacheline has been loaded, lets fetch the next instruction
+		flushPipeline = 1;
+		clock = 1;
+		#1;
+		clock = 0;
+		flushPipeline = 0;
+		#1;
+		
 		enable = 1;
 		tag = 5;
 		index = 8;
@@ -154,6 +181,7 @@ module FetchUnit_Test;
 		clock = 0;
 		#1;
 		enable = 0;
+		
 		clock = 1;
 		#1;
 		clock = 0;//by this point the tag should have been queried from the tag memory
@@ -173,12 +201,116 @@ module FetchUnit_Test;
 		#1;
 		clock = 0;//by this point the data should be available to be parsed
 		#1;
-		/*
-		cacheUpdateEnable = 0;		
+		
+		clock = 1;
+		#1;
+		clock = 0;
+		#1;
+		
 		clock = 1;
 		#1;
 		clock = 0;//by this point the data ought to be parsed and instruction available on the output
 		#1;
+		
+		
+		$display("Starting sequential cacheline read test");
+		////Now lets read a couple of instructions
+		enable = 1;
+		tag = 5;
+		index = 8;
+		offset = 0;		
+		clock = 1;
+		#1;
+		clock = 0;
+		#1;$display("");
+		//enable = 0;
+		
+		
+		enable = 1;
+		tag = 5;
+		index = 8;
+		offset = 4;
+		clock = 1;
+		#1;
+		clock = 0;
+		#1;$display("");		
+		
+		enable = 1;
+		tag = 5;
+		index = 8;
+		offset = 8;
+		clock = 1;
+		#1;
+		clock = 0;
+		#1;$display("");
+		
+		
+		enable = 1;
+		tag = 5;
+		index = 8;
+		offset = 16;
+		clock = 1;
+		#1;
+		clock = 0;
+		#1;$display("");
+		
+		
+		enable = 1;
+		tag = 5;
+		index = 8;
+		offset = 20;
+		clock = 1;
+		#1;
+		clock = 0;
+		#1;$display("");
+				
+		enable = 1;
+		tag = 5;
+		index = 8;
+		offset = 24;
+		clock = 1;
+		#1;
+		clock = 0;
+		#1;$display("");
+				
+		enable = 1;
+		tag = 5;
+		index = 8;
+		offset = 28;
+		clock = 1;
+		#1;
+		clock = 0;
+		#1;$display("");
+		enable = 0;
+		
+		clock = 1;
+		#1;
+		clock = 0;
+		#1;	$display("");	
+		clock = 1;
+		#1;
+		clock = 0;
+		
+		#1;	$display("");	
+		clock = 1;
+		#1;
+		clock = 0;
+		#1;$display("");
+		
+		clock = 1;
+		#1;
+		clock = 0;
+		#1;	$display("");	
+		
+		clock = 1;
+		#1;
+		clock = 0;
+		#1;$display("");
+		clock = 1;
+		#1;
+		clock = 0;
+		#1;$display("");
+		/*
 		*/
 	end
       

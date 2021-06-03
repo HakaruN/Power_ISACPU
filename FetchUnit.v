@@ -7,6 +7,7 @@ module FetchUnit #( parameter offsetSize = 5, parameter indexSize = 8, parameter
 	//command
 	input wire clock_i,
 	input wire reset_i,
+	input wire flushPipleine_i,
 	//fetch in
 	input wire enable_i,
 	input wire [0:tagSize-1] tag_i,
@@ -43,6 +44,7 @@ module FetchUnit #( parameter offsetSize = 5, parameter indexSize = 8, parameter
 		//command
 		.clock_i(clock_i), 
 		.reset_i(reset_i), 
+		.flushPipeline_i(flushPipeline_i),
 		//fetch in
 		.fetchEnable_i(enable_i), 
 		.tag_i(tag_i), 
@@ -72,11 +74,14 @@ module FetchUnit #( parameter offsetSize = 5, parameter indexSize = 8, parameter
 		//command
 		.clock_i(clock_i), 
 		.enable_i(tagQueryEnableOut), 
+		.flushPipeline_i(flushPipeline_i),
 		//fetch input
 		.queriedTag_i(tagQueryQueriedTagOut), 
 		.fetchTag_i(tagQueryFetchedTagOut), 
 		.index_i(tagQueryIndexOut), 
 		.offset_i(tagQueryOffsetOut), 
+		//cache miss inputs - allows a cache miss' state in this stage to be cleared
+		.isCacheMissResolved_i(cacheUpdateEnable_i),
 		//cache update output (if cache miss memory request comes from here) - goes out to core
 		.newTag_o(newTag_o), 
 		.newIndex_o(newIndex_o), 
@@ -101,6 +106,7 @@ module FetchUnit #( parameter offsetSize = 5, parameter indexSize = 8, parameter
 		//command
 		.clock_i(clock_i), 
 		.reset_i(reset_i), 
+		.flushPipeline_i(flushPipeline_i),
 		//fetch input
 		.fetchEnable_i(CacheHitMissEnableOut), 
 		.tag_i(CacheHitMissTagOut), 
@@ -124,7 +130,8 @@ module FetchUnit #( parameter offsetSize = 5, parameter indexSize = 8, parameter
 	CachelineParser
 	cachelineParser (
 		//command
-		.clock_i(clock_i), 
+		.clock_i(clock_i),
+		.flushPipeline_i(flushPipeline_i),
 		//fetch in
 		.enable_i(cacheMemoryEnableOut), 
 		.cacheline_i(cacheMemoryCachelineOut), 

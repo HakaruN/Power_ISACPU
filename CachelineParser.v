@@ -22,6 +22,7 @@ module CachelineParser #( parameter offsetSize = 5, parameter indexSize = 8, par
 	parameter cachelineSizeInBits = (2**offsetSize)*8, parameter parsePayloadSizeBits=32 )(
 	//command
 	input wire clock_i,
+	input wire flushPipeline_i,
 	//parse input
 	input wire enable_i,
 	input wire [0:cachelineSizeInBits-1] cacheline_i,
@@ -38,15 +39,28 @@ module CachelineParser #( parameter offsetSize = 5, parameter indexSize = 8, par
 	 
 	always @(posedge clock_i)
 	begin
-	
-		enable_o <= enable_i;
-		if(enable_i)
+		if(flushPipeline_i == 1)
 		begin
-			tag_o <= tag_i;
-			index_o <= index_i;
-			offset_o <= offset_i;
+			fetchedPayload_o = 0;
+			enable_o = 0;
+			tag_o = 0;
+			index_o = 0;
+			offset_o = 0;
+			$display("Stage 4 flushing pipeline");
 		end
-		fetchedPayload_o <= cacheline_i[offset_i*8+:parsePayloadSizeBits];
+		else
+		begin
+			enable_o <= enable_i;
+			if(enable_i)
+			begin
+				$display("Stage 4 writing instruction out for decoders");
+				tag_o <= tag_i;
+				index_o <= index_i;
+				offset_o <= offset_i;
+			end
+			fetchedPayload_o <= cacheline_i[offset_i*8+:parsePayloadSizeBits];
+		end
+
 	end
 
 endmodule

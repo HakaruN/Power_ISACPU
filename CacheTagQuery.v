@@ -17,6 +17,7 @@ module CacheTagQuery #( parameter offsetSize = 5, parameter indexSize = 8, param
 	input wire clock_i,
 	input wire reset_i,
 	input wire fetchEnable_i,
+	input wire flushPipeline_i,
 	//fetch input
 	input wire [0:tagSize-1] tag_i,
 	input wire [0:indexSize-1] index_i,
@@ -56,31 +57,48 @@ module CacheTagQuery #( parameter offsetSize = 5, parameter indexSize = 8, param
 	always @(posedge clock_i)
 	begin	
 	
-		//update buffers
-		bypassEnable <= fetchEnable_i;
-		if((fetchEnable_i == 1) && (updateEnable_i == 0))
+		if(flushPipeline_i == 1)
 		begin
-			bypassTag <= tag_i;
-			bypassIndex <= index_i;
-			bypassOffset <= offset_i;
-		end
-		else if((fetchEnable_i == 0) && (updateEnable_i == 1))
-		begin
-			$display("Writing to tag memory");			
-		end
-		if((fetchEnable_i == 1) && (updateEnable_i == 1))
-			$display("TIMING ERROR: Tag memory canot read and write at the same time (collision is possible)");
-		
-		//write out buffers
-		if(bypassEnable == 1)
-		begin
-			tag_o <= bypassTag;
-			index_o <= bypassIndex;
-			offset_o <= bypassOffset;
-			enable_o <= bypassEnable;
+			$display("Stage 1 flushing pipeline");
+			bypassTag <= 0;
+			bypassIndex <= 0;
+			bypassOffset <= 0;
+			bypassEnable <= 0;
+			tag_o <= 0;
+			index_o <= 0;
+			offset_o <= 0;
+			enable_o <= 0;
 		end
 		else
-			enable_o <= 0;
+		begin
+			//update buffers
+			bypassEnable <= fetchEnable_i;
+			if((fetchEnable_i == 1) && (updateEnable_i == 0))
+			begin
+				bypassTag <= tag_i;
+				bypassIndex <= index_i;
+				bypassOffset <= offset_i;
+				$display("Stage 1 updating fetch buffers");
+			end
+			else if((fetchEnable_i == 0) && (updateEnable_i == 1))
+			begin
+				$display("Writing to tag memory");			
+			end
+			if((fetchEnable_i == 1) && (updateEnable_i == 1))
+				$display("TIMING ERROR: Tag memory canot read and write at the same time (collision is possible)");
+			
+			//write out buffers
+			if(bypassEnable == 1)
+			begin
+				tag_o <= bypassTag;
+				index_o <= bypassIndex;
+				offset_o <= bypassOffset;
+				enable_o <= bypassEnable;
+				$display("Stage 1 writing out buffers");
+			end
+			else
+				enable_o <= 0;
+		end
 	end
 	
 
