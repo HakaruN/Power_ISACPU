@@ -33,7 +33,9 @@ module CacheMemory_Test;
 	reg [0:4] offset;
 	reg updateEnable;
 	reg [0:255] newCacheline;
+	reg [0:50] newTag;
 	reg [0:7] newIndex;
+	reg [0:4] newOffset;
 
 	// Outputs
 	wire [0:50] tag_o;
@@ -44,21 +46,29 @@ module CacheMemory_Test;
 
 	// Instantiate the Unit Under Test (UUT)
 	CacheMemory uut (
+		//command
 		.clock_i(clock), 
 		.reset_i(reset), 
+		//fetch input
 		.fetchEnable_i(fetchEnable), 
 		.tag_i(tag), 
 		.index_i(index), 
 		.offset_i(offset), 
+		//update input
 		.updateEnable_i(updateEnable), 
 		.newCacheline_i(newCacheline), 
+		.newTag_i(newTag),
 		.newIndex_i(newIndex), 
+		.newOffset_i(newOffset),
+		//fetch/update output
 		.tag_o(tag_o), 
 		.index_o(index_o), 
 		.offset_o(offset_o), 
 		.cacheline_o(cacheline_o), 
 		.enable_o(enable_o)
 	);
+	
+
 
 	initial begin
 		// Initialize Inputs
@@ -70,8 +80,10 @@ module CacheMemory_Test;
 		offset = 0;
 		updateEnable = 0;
 		newCacheline = 0;
+		newTag = 0;
 		newIndex = 0;
-
+		newOffset = 0;
+	
 		//reset
 		reset = 1;
 		clock = 1;

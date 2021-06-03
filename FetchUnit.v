@@ -31,7 +31,7 @@ module FetchUnit #( parameter offsetSize = 5, parameter indexSize = 8, parameter
 	output wire isCacheMiss_o
     );
 
-	wire [0:tagSize-1]tagQueryQueriedTagOut;
+	wire [0:tagSize]tagQueryQueriedTagOut;
 	wire [0:tagSize-1]tagQueryFetchedTagOut;
 	wire [0:indexSize-1]tagQueryIndexOut;
 	wire [0:offsetSize-1]tagQueryOffsetOut;
@@ -64,6 +64,7 @@ module FetchUnit #( parameter offsetSize = 5, parameter indexSize = 8, parameter
 	wire [0:indexSize-1]CacheHitMissIndexOut;
 	wire [0:offsetSize-1]CacheHitMissOffsetOut;
 	wire CacheHitMissEnableOut;
+
 	
 	//Stage 2 
 	CacheHitMissCheck 
@@ -73,7 +74,7 @@ module FetchUnit #( parameter offsetSize = 5, parameter indexSize = 8, parameter
 		.enable_i(tagQueryEnableOut), 
 		//fetch input
 		.queriedTag_i(tagQueryQueriedTagOut), 
-		.fetchTag_i(fetchTag), 
+		.fetchTag_i(tagQueryFetchedTagOut), 
 		.index_i(tagQueryIndexOut), 
 		.offset_i(tagQueryOffsetOut), 
 		//cache update output (if cache miss memory request comes from here) - goes out to core
@@ -101,14 +102,16 @@ module FetchUnit #( parameter offsetSize = 5, parameter indexSize = 8, parameter
 		.clock_i(clock_i), 
 		.reset_i(reset_i), 
 		//fetch input
-		.fetchEnable_i(tagQueryEnableOut), 
+		.fetchEnable_i(CacheHitMissEnableOut), 
 		.tag_i(CacheHitMissTagOut), 
 		.index_i(CacheHitMissIndexOut), 
 		.offset_i(CacheHitMissOffsetOut), 
 		//cache update input - if a cache miss comes back to write into the cache it comes in here
 		.updateEnable_i(cacheUpdateEnable_i), 
 		.newCacheline_i(newCacheline_i), 
+		.newTag_i(newTag_i),
 		.newIndex_i(newIndex_i), 
+		.newOffset_i(newOffset_i),
 		//fetch output
 		.tag_o(cacheMemoryTagOut), 
 		.index_o(cacheMemoryIndexOut), 
