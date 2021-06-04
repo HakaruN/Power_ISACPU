@@ -1,0 +1,214 @@
+`timescale 1ns / 1ps
+//////////////////////////////////////////////////////////////////////////////////
+//16b address bus takes the index (8b) and bottom of the tag (8bs) and returns a 256b block. This gives us a 16MiB memory range from a 16b bus
+//as the 65k addresses are actually block addresses and not byte addresses
+//Memory operations are a two step process, first the commands are sent to the memory (address, isWrite, memoryMakeRequest is strobed)
+//After that the transactions will begin. Each transaction is a 32 bit (databusWidth) read or write and will take 8 transactions for the operation to complete
+//////////////////////////////////////////////////////////////////////////////////
+module MemoryController #(parameter offsetSize = 5, parameter indexSize = 8, parameter tagSize = 64 - (offsetSize + indexSize),
+parameter databusWidth = 32, parameter iMemoryAddressSize = 16, 
+	parameter addressBits = 59, parameter addressSize = 64, parameter blockSize = 256)(
+	//command
+	input clock_i,
+	input reset_i,
+	//from core - memory request
+	input wire [0:addressSize-1] address_i,//address to read or write from
+	input wire [0:blockSize-1] data_i,//data bus from CPU to go to memory, does nothing if reading
+	input wire requestEnable_i,//enable signal from CPU telling
+	input wire isMemWrite_i,//CPU telling the MCU that the operation is a write operation, if its not write then its read
+	//to core - block write to core
+	output reg [0:blockSize-1] block_o,//block to go to the CPU/cache
+	output reg [0:addressSize-1] blockAddress_o,//address to go back to the CPU/cache
+	output reg blockOutEnable_o,//enable signal indicating that the block out is ready
+	output reg isMemoryEngaged_o,//tells the CPU the memory is currently transacting data	
+	//from mem - word write from memory
+	input wire memEnable_i,//enable signal coming in from the memory
+	input wire memoryClock_i,//clock coming in from the memory
+	input wire [0:databusWidth-1] memoryDataBus_i,//data bus from the memory
+	//to memory - read and write requests
+	output wire [0:databusWidth-1] memoryDataBus_o,//data bus to the memory
+	//command pins:
+	output reg [0:iMemoryAddressSize-1] address_o,//the address to read or write
+	output reg isWrite_o,//tells the memory if were doing a read or write request
+	output reg memoryMakeRequest_o//strobe on the command transfer so the memory knows the data on the commands pins is a request. Stays low during data transfer
+);
+	//MCU state:
+	reg isWrite;//tells the MCU if the block is a read or write operation
+	reg isBlockValid;//if set then the blockIndex is pointing to an index in the fetchBuffer, else not
+	reg [0:2] blockIndex;//the index into the transfer block that the MCU is currently at	
+	reg isMemoryEngaged;//If the memory is engaged we cant make new memory requests	
+	reg [0:addressSize-1] operatingAddress;//stores the address that is being operated on
+	reg [0:blockSize-1] fetchBuffer;
+	reg [0:databusWidth-1] dataBusWriteRegister;//holds the word going onto the data bus
+	wire [0:databusWidth-1] dataBusReadRegister;//holds the word coming off the databus
+
+	 
+	MemoryReadQueue memoryReadQueue (//memory to CPU
+		//memory side
+		.wr_clk(memoryClock_i),//memory clock		
+		.rst(reset_i),
+		.wr_en(memEnable_i),//memory write enable to the FIFO
+		.din(memoryDataBus_i),//memory databus into the FIFO
+		.full(), // output full
+		.empty(), // output empty
+		//MCUs side
+		.rd_clk(clock_i),
+		.rd_en(rd_en),
+		.dout(dataBusReadRegister)
+	);
+	
+	MemoryWriteQueue memoryWriteQueue (//CPU to memory
+		//MCU side
+		.wr_clk(clock_i),
+		.rst(reset_i),		
+		.wr_en(isWrite),
+		.din(dataBusWriteRegister),
+		.full(), // output full
+		.empty(), // output empty
+		//memory side
+		.rd_clk(memoryClock_i),
+		.rd_en(memEnable_i),
+		.dout(memoryDataBus_o)		
+	);
+	
+	always @(posedge clock_i)
+	begin
+		//stage 1
+		if(requestEnable_i == 1)
+		begin
+			$display("Memory operation requested from CPU");
+			$display("Memory block requested: %b, isWrite: %b", address_i[(addressSize-offsetSize)-:iMemoryAddressSize], isMemWrite_i);
+			///tell the memory of the request:
+			//Memory operations:			
+			address_o <= (address_i[(addressSize-offsetSize)-:iMemoryAddressSize]);//16b address bus takes the index (8b) and bottom of the tag (8bs) and returns a 256b block. This gives us a 16MiB memory range
+			isWrite_o <= isMemWrite_i;//tell memory if were doing a read or write
+			memoryMakeRequest_o <= 1;//tell the memory were doing a request
+			//MCU state operations:
+			isWrite <= isMemWrite_i;//update our state on if were reading or writing
+			isBlockValid <= 1;//update our state indicating were working on a valid block	
+			blockIndex <= 0;//start operating from the begining of the block
+			isMemoryEngaged <= 1;//update our state saying the memory is engaged
+			isMemoryEngaged_o <= 1;//update the CPU state saying the memory is engaged
+			operatingAddress <= address_i;//update our address buffer so we know what address to write back to (only really needed if this is a read)
+			//fetchBuffer <= 0;
+		end
+		
+		//stage 2
+		if(isMemoryEngaged == 1)//were doing a memory operation)
+		begin
+			$display("Memory is engaged");
+			$display("Working on block index: %d", blockIndex);
+			blockIndex <= blockIndex + 1;//increment the block index so next time the block index will point to the next word
+			if(isWrite == 1)//if were writing
+			begin//write to the queue
+				$display("Writing %h to memory at address %h", fetchBuffer[(0 * databusWidth)+:databusWidth], operatingAddress[(addressSize-offsetSize)-:iMemoryAddressSize]);
+				case(blockIndex)//put the word from the fetch buffer indicated by the blockIndex into the dataBusRegister (input of the write queue)
+					0:dataBusWriteRegister <= fetchBuffer[(0 * databusWidth)+:databusWidth];
+					1:dataBusWriteRegister <= fetchBuffer[(1 * databusWidth)+:databusWidth];
+					2:dataBusWriteRegister <= fetchBuffer[(2 * databusWidth)+:databusWidth];
+					3:dataBusWriteRegister <= fetchBuffer[(3 * databusWidth)+:databusWidth];
+					4:dataBusWriteRegister <= fetchBuffer[(4 * databusWidth)+:databusWidth];
+					5:dataBusWriteRegister <= fetchBuffer[(5 * databusWidth)+:databusWidth];
+					6:dataBusWriteRegister <= fetchBuffer[(6 * databusWidth)+:databusWidth];
+					7:dataBusWriteRegister <= fetchBuffer[(7 * databusWidth)+:databusWidth];
+				endcase
+			end
+			else//were reading
+			begin//read from queue
+				$display("Reading %h from memory at address %h", dataBusReadRegister, operatingAddress[(addressSize-offsetSize)-:iMemoryAddressSize]);
+				case(blockIndex)//put the word in the dataBusRegister indicated by the blockIndex into the fetch buffer (input of the read queue)
+					0:fetchBuffer[(0 * databusWidth)+:databusWidth] <= dataBusReadRegister;
+					1:fetchBuffer[(1 * databusWidth)+:databusWidth] <= dataBusReadRegister;
+					2:fetchBuffer[(2 * databusWidth)+:databusWidth] <= dataBusReadRegister;
+					3:fetchBuffer[(3 * databusWidth)+:databusWidth] <= dataBusReadRegister;
+					4:fetchBuffer[(4 * databusWidth)+:databusWidth] <= dataBusReadRegister;
+					5:fetchBuffer[(5 * databusWidth)+:databusWidth] <= dataBusReadRegister;
+					6:fetchBuffer[(6 * databusWidth)+:databusWidth] <= dataBusReadRegister;
+					7:fetchBuffer[(7 * databusWidth)+:databusWidth] <= dataBusReadRegister;
+				endcase
+			end
+			
+			if((blockIndex == 3'b111))//were at the end of the block, lets finnish up
+			begin
+				$display("Memory operation complete");
+				isBlockValid <= 0;//unset block valid
+				isMemoryEngaged <= 0;
+			end
+		end
+	end
+	 /*
+	//memory bus control
+	reg isMemoryEngaged;//If the memory is engaged we cant make new memory requests
+	reg isBlockValid;//if set then the blockIndex is pointing to an index in the fetchBuffer, else not
+	//
+	reg [0:addressSize-1] operatingAddress;//stores the address that is being operated on
+	reg [0:blockSize-1] fetchBuffer;
+	reg [0:2] blockIndex;
+	
+	
+	always @(posedge clock_i)
+	begin
+		if(reset_i == 1)
+		begin
+			blockIndex <= 0;
+			isMemoryEngaged_o <= 0; isMemoryEngaged <= 0;
+			blockOutEnable_o <= 0;
+			memoryMakeRequest_o <= 0;
+			$display("Reset");
+		end
+		else
+		begin
+			isMemoryEngaged_o <= isMemoryEngaged;
+			
+			//read from mem
+			if(requestEnable_i == 1 && isMemoryEngaged == 0)
+			begin//if we have a request to get data from memory and the memory is not engaged
+				isMemoryEngaged <= 1;//make the memory engaged
+				//16b address bus takes the index (8b) and bottom of the tag (8bs) and returns a 256b block. This gives us a 16MiB memory range
+				address_o <= (address_i[(addressSize-offsetSize)-:iMemoryAddressSize]);
+				blockIndex <= 0;//reset the block index to point at the begining of the block
+				operatingAddress <= address_i;
+				memoryMakeRequest_o <= 1; isWrite_o <= isMemWrite_i;//tell the memory were ready and its a read operation
+				data_o <= data_i;//put whatever is on the databus from the core onto the memories databus
+				$display("Memory transaction begining");
+				$display("isWrite: %b, logical Address %b, physical address %b", isMemWrite_i, address_i, (address_i[(addressSize-offsetSize)-:iMemoryAddressSize]));
+				$display("data: %b", data_i);
+				$display("Memory is engaged");
+			end
+			
+			//read the databus from memory
+			if((memoryClock_i == 1) && (memEnable_i == 1))
+			begin
+				memoryMakeRequest_o <= 0;//release the memorys enable pin 
+				//read the contents of the bus to the fetch buffer
+				isBlockValid <= 1;//set the blockvalid bit
+				case(blockIndex)
+					0:fetchBuffer[(0 * databusWidth)+:databusWidth] <= memoryDataBus_i;
+					1:fetchBuffer[(1 * databusWidth)+:databusWidth] <= memoryDataBus_i;
+					2:fetchBuffer[(2 * databusWidth)+:databusWidth] <= memoryDataBus_i;
+					3:fetchBuffer[(3 * databusWidth)+:databusWidth] <= memoryDataBus_i;
+					4:fetchBuffer[(4 * databusWidth)+:databusWidth] <= memoryDataBus_i;
+					5:fetchBuffer[(5 * databusWidth)+:databusWidth] <= memoryDataBus_i;
+					6:fetchBuffer[(6 * databusWidth)+:databusWidth] <= memoryDataBus_i;
+					7:fetchBuffer[(7 * databusWidth)+:databusWidth] <= memoryDataBus_i;
+				endcase
+				
+				blockIndex <= blockIndex + 1;
+				isMemoryEngaged <= 0;//release the memory
+			end
+			
+			if((blockIndex == 3'b000) && (isBlockValid))//if its a valid block and we've ticked over to index zero, the buffer is full
+			begin
+				isBlockValid <= 0;//unset block valid
+				block_o <= fetchBuffer;//write out the block
+				blockAddress_o <= operatingAddress;
+				blockOutEnable_o <= 1;
+			end
+			else
+				blockOutEnable_o <= 0;
+		end
+		
+	end
+*/
+	
+endmodule
