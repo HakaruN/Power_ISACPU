@@ -77,12 +77,7 @@ module FetchUnit_Test;
 		.newIndex_o(newIndex_o), 
 		.newOffset_o(newOffset_o), 
 		.isCacheMiss_o(isCacheMiss_o)
-	);
-	
-	//////
-	//TODO: Track down why the enable signal doesnt return to zero after an instruction fetch
-	//////
-	
+	);	
 
 	initial begin
 		// Initialize Inputs
