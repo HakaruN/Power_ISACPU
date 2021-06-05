@@ -52,7 +52,7 @@ module MemoryController_Test;
 		.address_o(address_o), 
 		.isWrite_o(isWrite_o), 
 		.memoryMakeRequest_o(memoryMakeRequest_o)
-	);
+	);	
 	
 	
 	//make a memory
@@ -87,19 +87,47 @@ module MemoryController_Test;
 		address = 64'b_00000011_00001;
 		requestEnable = 1;
 		
+		//MEMClock = 1;
 		CPUClock = 1;
 		#1;
-		CPUClock = 0;
+		//MEMClock = 0;
+		CPUClock = 0;		
+		#1;
+		
+		requestEnable = 0;
+		
+		MEMClock = 1;
+		CPUClock = 1;
+		#1;
+		MEMClock = 0;
+		CPUClock = 0;		
+		#1;
+		MEMClock = 1;
+		CPUClock = 1;
+		#1;
+		MEMClock = 0;
+		CPUClock = 0;		
+		#1;
+		MEMClock = 1;
+		CPUClock = 1;
+		#1;
+		MEMClock = 0;
+		CPUClock = 0;		
+		#1;
+		MEMClock = 1;
+		#1;
+		MEMClock = 0;	
+		#1;
+		MEMClock = 1;
+		#1;
+		MEMClock = 0;	
+		#1;
+		MEMClock = 1;
+		#1;
+		MEMClock = 0;	
 		#1;
 	end
-	
-	/*
-	output reg [0:iMemoryAddressSize-1] address_o,
-	output reg [0:databusWidth-1] data_o,
-	output reg isWrite_o,
-	output reg memoryMakeRequest_o
-	*/
-	
+		
 	//be the memory
 	reg [0:15] blockAddress;
 	reg isWriteRequest;
