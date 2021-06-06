@@ -27,7 +27,7 @@ parameter Z23 = 25, parameter INVALID = 0
 	
 	InstructionFormatClassDecode #( .instructionWidth(instructionWidth),  .addressSize(addressSize), .opcodeWidth(opcodeWidth),  .formatIndexRange(formatIndexRange),
  .A(A), .B(B), .D(D), .DQ(DQ), .DS(DS), .DX(DX), .I(I), .M(M), .MD(MD), .MDS(MDS), .SC(SC), .VA(VA), .VC(VC), .VX(VX), .X(X), .XFL(XFL),
- .XFX(XFX), .XL(XL), .XO(XO), .XS(XS), .XX2(XX2), .XX3(XX3), .XX4(XX4), .Z22(Z22), .Z23(Z23), .INVALID(INVALID) ) instructionFormatDecode
+ .XFX(XFX), .XL(XL), .XO(XO), .XS(XS), .XX2(XX2), .XX3(XX3), .XX4(XX4), .Z22(Z22), .Z23(Z23), .INVALID(INVALID) ) instructionFormatClassDecode
 	(
 	//command
 	.clock_i(clock_i),

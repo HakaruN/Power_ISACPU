@@ -38,55 +38,55 @@ parameter Z23 = 25, parameter INVALID = 0
 			//figure out the instruction format (This uses a table)
 			case(instruction_i[0:opcodeWidth-1])//case on the opcode
 				//D format
-				34: instructionFormatClass_o <= 3;
-				35: instructionFormatClass_o <= 3;
-				40: instructionFormatClass_o <= 3;
-				41: instructionFormatClass_o <= 3;
-				42: instructionFormatClass_o <= 3;
-				43: instructionFormatClass_o <= 3;
-				32: instructionFormatClass_o <= 3;
-				33: instructionFormatClass_o <= 3;
-				38: instructionFormatClass_o <= 3;
-				39: instructionFormatClass_o <= 3;
-				44: instructionFormatClass_o <= 3;
-				45: instructionFormatClass_o <= 3;
-				36: instructionFormatClass_o <= 3;
-				37: instructionFormatClass_o <= 3;
-				46: instructionFormatClass_o <= 3;
-				47: instructionFormatClass_o <= 3;
-				14: instructionFormatClass_o <= 3;
-				15: instructionFormatClass_o <= 3;
-				12: instructionFormatClass_o <= 3;
-				13: instructionFormatClass_o <= 3;
-				8: instructionFormatClass_o <= 3;
-				7: instructionFormatClass_o <= 3;
-				11: instructionFormatClass_o <= 3;
-				10: instructionFormatClass_o <= 3;
-				3: instructionFormatClass_o <= 3;
-				2: instructionFormatClass_o <= 3;
-				28: instructionFormatClass_o <= 3;
-				29: instructionFormatClass_o <= 3;
-				24: instructionFormatClass_o <= 3;
-				25: instructionFormatClass_o <= 3;
-				26: instructionFormatClass_o <= 3;
-				27: instructionFormatClass_o <= 3;
+				34: instructionFormatClass_o <= D;
+				35: instructionFormatClass_o <= D;
+				40: instructionFormatClass_o <= D;
+				41: instructionFormatClass_o <= D;
+				42: instructionFormatClass_o <= D;
+				43: instructionFormatClass_o <= D;
+				32: instructionFormatClass_o <= D;
+				33: instructionFormatClass_o <= D;
+				38: instructionFormatClass_o <= D;
+				39: instructionFormatClass_o <= D;
+				44: instructionFormatClass_o <= D;
+				45: instructionFormatClass_o <= D;
+				36: instructionFormatClass_o <= D;
+				37: instructionFormatClass_o <= D;
+				46: instructionFormatClass_o <= D;
+				47: instructionFormatClass_o <= D;
+				14: instructionFormatClass_o <= D;
+				15: instructionFormatClass_o <= D;
+				12: instructionFormatClass_o <= D;
+				13: instructionFormatClass_o <= D;
+				8: instructionFormatClass_o <= D;
+				7: instructionFormatClass_o <= D;
+				11: instructionFormatClass_o <= D;
+				10: instructionFormatClass_o <= D;
+				3: instructionFormatClass_o <= D;
+				2: instructionFormatClass_o <= D;
+				28: instructionFormatClass_o <= D;
+				29: instructionFormatClass_o <= D;
+				24: instructionFormatClass_o <= D;
+				25: instructionFormatClass_o <= D;
+				26: instructionFormatClass_o <= D;
+				27: instructionFormatClass_o <= D;
 				//DS
-				58: instructionFormatClass_o <= 5;
-				62: instructionFormatClass_o <= 5;
+				58: instructionFormatClass_o <= DS;
+				62: instructionFormatClass_o <= DS;
 				//DQ
-				56: instructionFormatClass_o <= 4;
+				56: instructionFormatClass_o <= DQ;
 				//DX
-				19: instructionFormatClass_o <= 6;
+				19: instructionFormatClass_o <= DX;
 				//MD
-				30: instructionFormatClass_o <= 9;
+				30: instructionFormatClass_o <= MD;
 				//X
-				31: instructionFormatClass_o <= 15;
+				31: instructionFormatClass_o <= X;
 				//M
-				21: instructionFormatClass_o <= 8;
-				23: instructionFormatClass_o <= 8;
-				20: instructionFormatClass_o <= 8;
+				21: instructionFormatClass_o <= M;
+				23: instructionFormatClass_o <= M;
+				20: instructionFormatClass_o <= M;
 				//VA
-				4: instructionFormatClass_o <= 12;
+				4: instructionFormatClass_o <= VA;
 				default: instructionFormatClass_o <= 0;
 			endcase
 			
