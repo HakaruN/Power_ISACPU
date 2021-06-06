@@ -6,7 +6,7 @@
 //At this stage we cannot tell the exact format however as many share opcodes therefore we will identify the format class
 //These are: B, D, DQ, DS, DX, MD, M, VA, X. This list may be incomplete however.
 //////////////////////////////////////////////////////////////////////////////////
-module InstructionFormatClassDecode#( parameter instructionWidth = 32, parameter addressSize = 64, opcodeWidth = 6, parameter formatIndexRange = 5,
+module InstructionFormatClassDecode #( parameter instructionWidth = 32, parameter addressSize = 64, opcodeWidth = 6, parameter formatIndexRange = 5,
 parameter A = 1, parameter B = 2, parameter D = 3, parameter DQ = 4, parameter DS = 5, parameter DX = 6, parameter I = 7, parameter M = 8,
 parameter MD = 9, parameter MDS = 10, parameter SC = 11, parameter VA = 12, parameter VC = 13, parameter VX = 14, parameter X = 15, parameter XFL = 16,
 parameter XFX = 17, parameter XL = 18, parameter XO = 19, parameter XS = 20, parameter XX2 = 21, parameter XX3 = 22, parameter XX4 = 23, parameter Z22 = 24,
@@ -20,7 +20,7 @@ parameter Z23 = 25, parameter INVALID = 0
 	input wire [0:addressSize-1] address_i,
 	//data out
 	output reg [0:opcodeWidth-1] opCode_o,
-	output reg [0:opcodeWidth-instructionWidth-1] payload_o,
+	output reg [0:(instructionWidth-opcodeWidth)-1] payload_o,
 	output reg [0:addressSize-1] address_o,
 	output reg [0:formatIndexRange-1] instructionFormatClass_o,
 	output reg enable_o
