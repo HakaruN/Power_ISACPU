@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-//Implements all MD format instructions in the PowerISA 3.0B
+//Implements all MD and MDS format instructions in the PowerISA 3.0B
 //////////////////////////////////////////////////////////////////////////////////
 module MDFormatDecoder#( parameter instructionWidth = 32, parameter addressSize = 64, parameter formatIndexRange = 5,
 parameter A = 1, parameter B = 2, parameter D = 3, parameter DQ = 4, parameter DS = 5, parameter DX = 6, parameter I = 7, parameter M = 8,
@@ -63,7 +63,7 @@ begin
 				default : enable_o <= 0;
 			endcase
 			//DONT USE DEFAULT IN ANY CASE/SWITCH BELOW
-			case(instruction_i[27:30])//check for MD format
+			case(instruction_i[27:30])//check for MDS format
 				8: begin $display("Rotate Left Doubleword then Clear Left");
 					reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15];  reg3_o <= instruction_i[16:20];
 					reg2ValOrZero_o <= 0;

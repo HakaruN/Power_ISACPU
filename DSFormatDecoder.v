@@ -25,7 +25,6 @@ parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, 
 	
 always @(posedge clock_i)
 begin
-	opcode_o <= instruction_i[0:opcodeWidth-1];
 	//Integer DS format instructions
 	if(instruction_i[0:opcodeWidth-1] == 58 && enable_i == 1)
 	begin
@@ -33,16 +32,19 @@ begin
 			2: begin $display("Load Word Algebraic");
 				reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15];
 				imm_o <= $signed({instruction_i[16:29], 2'b00}); reg2ValOrZero_o <= 1;
+				opcode_o <= instruction_i[0:opcodeWidth-1];
 				enable_o <= 1;
 			end
 			0: begin $display("Load Doubleword");
 				reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15];
 				imm_o <= $signed({instruction_i[16:29], 2'b00}); reg2ValOrZero_o <= 1;
+				opcode_o <= instruction_i[0:opcodeWidth-1];
 				enable_o <= 1;
 			end
 			1: begin $display("Load Doubleword with Update");
 				reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15];
 				imm_o <= $signed({instruction_i[16:29], 2'b00}); reg2ValOrZero_o <= 0;
+				opcode_o <= instruction_i[0:opcodeWidth-1];
 				enable_o <= 1;
 			end
 			default begin $display("Invalid or unsupported instruction"); enable_o <= 0; end
@@ -54,16 +56,19 @@ begin
 			0: begin $display("Store Doubleword");
 				reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15];
 				imm_o <= $signed({instruction_i[16:29], 2'b00}); reg2ValOrZero_o <= 1;
+				opcode_o <= instruction_i[0:opcodeWidth-1];
 				enable_o <= 1;
 			end
 			2: begin $display("Store Quadword");
 				reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15];
 				imm_o <= $signed({instruction_i[16:29], 2'b00}); reg2ValOrZero_o <= 1;
+				opcode_o <= instruction_i[0:opcodeWidth-1];
 				enable_o <= 1;
 			end
 			1: begin $display("Store Doubleword with Update");
 				reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15];
 				imm_o <= $signed({instruction_i[16:29], 2'b00}); reg2ValOrZero_o <= 0;
+				opcode_o <= instruction_i[0:opcodeWidth-1];
 				enable_o <= 1;
 			end
 			default begin $display("Invalid or unsupported instruction"); enable_o <= 0; end

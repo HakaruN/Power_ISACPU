@@ -26,12 +26,12 @@ parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, 
 
 	always @(posedge clock_i)
 	begin
-		opcode_o <= instruction_i[0:opcodeWidth-1];
 		if(instruction_i[0:opcodeWidth-1] == 56 && enable_i == 1)
 		begin $display("Load Quadword");
 			reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15];
 			reg2ValOrZero_o <= 1;
 			imm_o <= $signed({instruction_i[16:27], 4'b0000});
+			opcode_o <= instruction_i[0:opcodeWidth-1];
 			enable_o <= 1;
 		end
 		else if(instruction_i[0:opcodeWidth-1] == 61 && enable_i == 1)
@@ -42,6 +42,7 @@ parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, 
 				reg2ValOrZero_o <= 1;
 				imm_o <= $signed({instruction_i[16:27], 4'b0000});
 				bit_o <= instruction_i[28];
+				opcode_o <= instruction_i[0:opcodeWidth-1];
 				enable_o <= 1;
 			end
 			2: begin $display("Store VSX Vector");
@@ -49,6 +50,7 @@ parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, 
 				reg2ValOrZero_o <= 1;
 				imm_o <= $signed({instruction_i[16:27], 4'b0000});
 				bit_o <= instruction_i[28];
+				opcode_o <= instruction_i[0:opcodeWidth-1];
 				enable_o <= 1;
 			end
 			endcase
