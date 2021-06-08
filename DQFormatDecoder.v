@@ -7,7 +7,7 @@ parameter A = 1, parameter B = 2, parameter D = 3, parameter DQ = 4, parameter D
 parameter MD = 9, parameter MDS = 10, parameter SC = 11, parameter VA = 12, parameter VC = 13, parameter VX = 14, parameter X = 15, parameter XFL = 16,
 parameter XFX = 17, parameter XL = 18, parameter XO = 19, parameter XS = 20, parameter XX2 = 21, parameter XX3 = 22, parameter XX4 = 23, parameter Z22 = 24,
 parameter Z23 = 25, parameter INVALID = 0, parameter unsignedImm = 1, parameter signedImm = 2, parameter signedImmExt = 3,
-parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, parameter immWidth = 16
+parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, parameter immWidth = 12
 )(
 	//command
 	input wire clock_i,
@@ -19,7 +19,8 @@ parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, 
 	output reg [0:opcodeWidth-1] opcode_o,
 	output reg [0:regWidth-1] reg1_o, reg2_o,
 	output reg reg2ValOrZero_o,//indicates that if the register addr is zero, a zero litteral is to be used not reg zero
-	output reg [0:63] imm_o,
+	output reg [0:immWidth-1] imm_o,
+	output reg shiftImmUpBytes_o,//EG shiftImmUpBytes_o == 2, the extended immediate will be { 32'h0000_0000, immFormat_o, 16'h0000}, if shiftImmUpBytes_o == 4: {immFormat_o, 48'h0000_0000_0000}
 	output reg bit_o,
 	output reg enable_o
 	);
@@ -28,9 +29,8 @@ parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, 
 	begin
 		if(instruction_i[0:opcodeWidth-1] == 56 && enable_i == 1)
 		begin $display("Load Quadword");
-			reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15];
-			reg2ValOrZero_o <= 1;
-			imm_o <= $signed({instruction_i[16:27], 4'b0000});
+			reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15]; reg2ValOrZero_o <= 1;
+			imm_o <= instruction_i[16:27]; shiftImmUpBytes_o <= 2;
 			opcode_o <= instruction_i[0:opcodeWidth-1];
 			enable_o <= 1;
 		end
@@ -38,17 +38,15 @@ parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, 
 		begin
 			case(instruction_i[29:31])
 			1: begin $display("Load VSX Vector");
-				reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15];
-				reg2ValOrZero_o <= 1;
-				imm_o <= $signed({instruction_i[16:27], 4'b0000});
+				reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15]; reg2ValOrZero_o <= 1;
+				imm_o <= instruction_i[16:27]; shiftImmUpBytes_o <= 2;
 				bit_o <= instruction_i[28];
 				opcode_o <= instruction_i[0:opcodeWidth-1];
 				enable_o <= 1;
 			end
 			2: begin $display("Store VSX Vector");
-				reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15];
-				reg2ValOrZero_o <= 1;
-				imm_o <= $signed({instruction_i[16:27], 4'b0000});
+				reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15]; reg2ValOrZero_o <= 1;
+				imm_o <= instruction_i[16:27]; shiftImmUpBytes_o <= 2;
 				bit_o <= instruction_i[28];
 				opcode_o <= instruction_i[0:opcodeWidth-1];
 				enable_o <= 1;
