@@ -2,7 +2,8 @@
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, parameter iMemoryAddressSize = 16, parameter instructionSize = 32,
-	parameter iCacheOffsetSize = 5, iCacheIndexSize = 8, iCacheTagSize = addressSize - (iCacheOffsetSize + iCacheIndexSize), parameter blockSize = 256
+	parameter iCacheOffsetSize = 5, iCacheIndexSize = 8, iCacheTagSize = addressSize - (iCacheOffsetSize + iCacheIndexSize), parameter blockSize = 256,	
+	parameter formatIndexRange = 5, parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5
 	)(
 	//command
 	input wire clock_i,
@@ -78,6 +79,52 @@ module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, 
 		//cache update output
 		.newAddress_o(memoryRequestAddress), 
 		.isCacheMiss_o(isCacheMiss)
+	);
+	
+	
+	
+	//decode
+	//decode output
+	wire decodeEnable;
+	wire [0:63] decodeImm;
+	wire decodeImmEnable;
+	wire [0:regWidth-1] decodeReg1, decodeReg2, decodeReg3;
+	wire decodeReg1Enable, decodeReg2Enable, decodeReg3Enable;
+	wire decodeReg3IsImmediate;
+	wire decodeBit1, decodeBit2;
+	wire decodeBit1Enabled, decodeBit2Enabled;
+	wire decodeReg2ValOrZero;
+	wire [0:addressSize-1] decodeInstructionAddress;
+	wire [0:opcodeWidth-1] decodeOpCode;
+	wire [0:xOpCodeWidth-1] decodeXOpcode;
+	wire decodeXOpCodeEnabled;
+	wire [0:formatIndexRange-1] decodeInstructionFormat;
+	DecodeUnit #(
+	.instructionWidth(instructionSize), .addressSize(addressSize), .formatIndexRange(formatIndexRange),
+	.opcodeWidth(opcodeWidth), .xOpCodeWidth(xOpCodeWidth), .regWidth(regWidth))
+	decodeUnit
+	(
+	//command	
+	.clock_i(clock_i),
+	.enable_i(fetchEnable_o),
+	//data in
+	.instruction_i(fetchedInstruction),
+	.instructionAddress_i(fetchedInstructionAddress),
+	//data out
+	.enable_o(decodeEnable),
+	.imm_o(decodeImm),
+	.immEnable_o(decodeImmEnable),
+	.reg1_o(decodeReg1), .reg2_o(decodeReg2), .reg3_o(decodeReg3),
+	.reg1Enable_o(decodeReg1Enable), .reg2Enable_o(decodeReg2Enable), .reg3Enable_o(decodeReg3Enable),
+	.reg3IsImmediate_o(decodeReg3IsImmediate),
+	.bit1_o(decodeBit1), .bit2_o(decodeBit2),
+	.bit1Enabled_o(decodeBit1Enabled), .bit2Enabled_o(decodeBit2Enabled),
+	.reg2ValOrZero_o(decodeReg2ValOrZero),
+	.instructionAddress_o(decodeInstructionAddress),
+	.opCode_o(decodeOpCode),
+	.xOpcode_o(decodeXOpcode),
+	.xOpCodeEnabled_o(decodeXOpCodeEnabled),
+	.instructionFormat_o(decodeInstructionFormat)
 	);
 
 

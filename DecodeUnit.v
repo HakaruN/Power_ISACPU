@@ -13,7 +13,7 @@ parameter MD = 9, parameter MDS = 10, parameter SC = 11, parameter VA = 12, para
 parameter XFX = 17, parameter XL = 18, parameter XO = 19, parameter XS = 20, parameter XX2 = 21, parameter XX3 = 22, parameter XX4 = 23, parameter Z22 = 24,
 parameter Z23 = 25, parameter INVALID = 0,
 parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter XoOpcodeWidth = 9, parameter regWidth = 5, parameter immWidth = 16,
-parameter DSImmWidth = 14
+parameter DSImmWidth = 14, parameter DImmWith = 16, parameter DQImmWidth = 12, parameter MDImmWidth = 6
 )(
 	//command	
 	input wire clock_i,
@@ -24,7 +24,7 @@ parameter DSImmWidth = 14
 	//data out
 	output wire enable_o,
 	output wire [0:63] imm_o,
-	output wire immEnable_i,
+	output wire immEnable_o,
 	output wire [0:regWidth-1] reg1_o, reg2_o, reg3_o,
 	output wire reg1Enable_o, reg2Enable_o, reg3Enable_o,
 	output wire reg3IsImmediate_o,
@@ -53,7 +53,7 @@ parameter DSImmWidth = 14
 	wire [0:1] DFshiftImmUpBytes;//EG shiftImmUpBytes_o == 2, the extended immediate will be { 32'h0000_0000, immFormat_o, 16'h0000}, if shiftImmUpBytes_o == 4: {immFormat_o, 48'h0000_0000_0000}
 	wire DEnable;	
 	//D format instruction decoder
-	DFormatDecoder
+	DFormatDecoder #(.opcodeWidth(opcodeWidth), .regWidth(regWidth), .immWidth(DImmWith), .instructionWidth(instructionWidth))
 	dFormatDecoder(
 	//command
 	.clock_i(clock_i),
@@ -74,7 +74,8 @@ parameter DSImmWidth = 14
 	wire DQBit1;
 	wire DQEnable;
 	//DQ format instruction decoder
-	DQFormatDecoder//All dq instructions are implicitly reg2ValOrZero=1 and imm shift up 4 bits
+	//All dq instructions are implicitly reg2ValOrZero=1 and imm shift up 4 bits
+	DQFormatDecoder#(.opcodeWidth(opcodeWidth), .regWidth(regWidth), .immWidth(DQImmWidth), .instructionWidth(instructionWidth))
 	dQFormatDecoder(
 	//command
 	.clock_i(clock_i),
@@ -166,7 +167,7 @@ parameter DSImmWidth = 14
 
 	//Stage 2 - decoder output mux
 	DecodeStage2 #(.opcodeWidth(opcodeWidth),.regWidth(regWidth),.addressSize(addressSize),
-	.DImmWidth(16),.DQimmWidth(12),.DSimmWidth(14),.MDimmWidth(6),
+	.DImmWidth(16),.DQimmWidth(12),.DSimmWidth(14),.MDimmWidth(MDImmWidth),
 	.XxoOpcodeWidth(10),.XoOpCodeWidth(9),
 	//instrcution format
 	.formatIndexRange(formatIndexRange),
