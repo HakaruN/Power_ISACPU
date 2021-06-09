@@ -22,16 +22,36 @@ parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, 
 	input wire [0:instructionWidth-1] instruction_i,
 	input wire [0:addressSize-1] instructionAddress_i,
 	//data out
-	output wire [0:opcodeWidth-1] opCode,
-	output wire [0:regWidth-1] reg1, reg2, reg3, reg4,
-	output wire reg2ValOrZero,
-	output wire bit1, bit2,
-	output wire [0:63] imm,
-	//output enables
-	output wire DFormatEnable, DSormatEnable, DQormatEnable, XFormatEnable
+	output wire enable_o,
+	output wire [0:63] imm_o,
+	output wire immEnable_i,
+	output wire [0:regWidth-1] reg1_o, reg2_o, reg3_o,
+	output wire reg1Enable_o, reg2Enable_o, reg3Enable_o,
+	output wire reg3IsImmediate_o,
+	output wire bit1_o, bit2_o,
+	output wire bit1Enabled_o, bit2Enabled_o,
+	output wire reg2ValOrZero_o,
+	output wire [0:instructionWidth-1] instructionAddress_o,
+	output wire [0:opcodeWidth-1] opCode_o,
+	output wire [0:xOpCodeWidth-1] xOpcode_o,
+	output wire xOpCodeEnabled_o,
+	output wire [0:formatIndexRange-1] instructionFormat_o
 	);
+	
 
+
+	
+	//instruction bypass buffer
+	reg [0:opcodeWidth-1] opcodeBypass;
+	reg [0:addressSize-1] addressBypass;
+	
 	///Stage 1 - parallel decoders:
+	wire [0:regWidth-1] DReg1, DReg2;
+	wire [0:15] DImm;
+	wire DReg2ValOrZero;
+	wire DImmFormat;//0 = unsignedImm, 1 = signedImm (sign extended to 64b down the pipe)
+	wire [0:1] DFshiftImmUpBytes;//EG shiftImmUpBytes_o == 2, the extended immediate will be { 32'h0000_0000, immFormat_o, 16'h0000}, if shiftImmUpBytes_o == 4: {immFormat_o, 48'h0000_0000_0000}
+	wire DEnable;	
 	//D format instruction decoder
 	DFormatDecoder
 	dFormatDecoder(
@@ -40,33 +60,38 @@ parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, 
 	.enable_i(enable_i),
 	//data in
 	.instruction_i(instruction_i),
-	.address_i(instructionAddress_i),
 	//data out
-	.opcode_o(opCode),
-	.reg1_o(reg1), .reg2_o(reg2),
-	.reg2ValOrZero_o(reg2ValOrZero),
-	.imm_o(imm),
-	.enable_o(DFormatEnable)
-	);
+	.reg1_o(DReg1), .reg2_o(DReg2),
+	.reg2ValOrZero_o(DReg2ValOrZero),
+	.imm_o(DImm),
+	.immFormat_o(DImmFormat),
+	.shiftImmUpBytes_o(DFshiftImmUpBytes),
+	.enable_o(DEnable)
+	);	
 	
+	wire [0:regWidth-1] DQReg1, DQReg2;
+	wire [0:11] DQImm;
+	wire DQBit1;
+	wire DQEnable;
 	//DQ format instruction decoder
-	DQFormatDecoder
+	DQFormatDecoder//All dq instructions are implicitly reg2ValOrZero=1 and imm shift up 4 bits
 	dQFormatDecoder(
 	//command
 	.clock_i(clock_i),
 	.enable_i(enable_i),
 	//data in
 	.instruction_i(instruction_i),
-	.address_i(instructionAddress_i),
 	//data out
-	.opcode_o(opCode),
-	.reg1_o(reg1), .reg2_o(reg2),
-	.reg2ValOrZero_o(reg2ValOrZero),
-	.imm_o(imm),
-	.bit_o(bit1),
-	.enable_o(DQormatEnable)
+	.reg1_o(DQReg1), .reg2_o(DQReg2),
+	.imm_o(DQImm),
+	.bit_o(DQBit1),
+	.enable_o(DQEnable)
 	);
-	
+
+	wire [0:regWidth-1] DSReg1, DSReg2;
+	wire DSReg2ValOrZero;
+	wire [0:13] DSImm;//Imm is implicitly extended to 16 bits by adding 2 zeroes on the right size
+	wire DSEnable;
 	//DS format instruction decoder
 	DSFormatDecoder
 	dSFormatDecoder(
@@ -75,35 +100,141 @@ parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, 
 	.enable_i(enable_i),
 	//data in
 	.instruction_i(instruction_i),
-	.address_i(instructionAddress_i),
 	//data out
-	.opcode_o(opCode),
-	.reg1_o(reg1), .reg2_o(reg2),
-	.reg2ValOrZero_o(reg2ValOrZero),
-	.imm_o(imm),
-	.enable_o(DSFormatEnableO)
+	.reg1_o(DSReg1), .reg2_o(DSReg2),
+	.reg2ValOrZero_o(DSReg2ValOrZero),
+	.imm_o(DSImm),
+	.enable_o(DSEnable)
 	);
 	
+	wire [0:9] xOpcode;
+	wire [0:regWidth-1] XReg1, XReg2, XReg3;
+	wire XReg2ValOrZero;
+	wire XBit1;
+	wire XEnable;
 	//X format instruction decoder
-	XFormatDecoder
+	XFormatDecoder #(.opcodeWidth(opcodeWidth), .xOpCodeWidth(10), .regWidth(regWidth), .instructionWidth(instructionWidth))
 	xFormatDecoder(
 	//command
 	.clock_i(clock_i),
 	.enable_i(enable_i),
 	//data in
 	.instruction_i(instruction_i),
-	.address_i(instructionAddress_i),
 	//data out
-	.opcode_o(opCode),
-	.reg1_o(reg1), .reg2_o(reg2), .reg3_o(reg3),
-	.reg2ValOrZero_o(reg2ValOrZero),
-	.imm_o(imm),
-	.bit1_o(bit1), .bit2_o(bit2),
-	.enable_o(XFormatEnable)
+	.xOpcode_o(xOpcode),
+	.reg1_o(XReg1), .reg2_o(XReg2), .reg3_o(XReg3),
+	.reg2ValOrZero_o(XReg2ValOrZero),
+	.bit1_o(bit1),
+	.enable_o(XEnable)
+	);	
+	
+	wire [0:regWidth-1] MDReg1, MDReg2, MDReg3;
+	wire [0:5] MDImm;
+	wire MDBit1, MDBit2;
+	wire MDEnable;
+	MDFormatDecoder #(.opcodeWidth(opcodeWidth), .regWidth(regWidth), .immWidth(6), .instructionWidth(instructionWidth))
+	mDFormatDecoder(
+	.clock_i(clock_i),
+	.enable_i(enable_i),
+	//data in
+	.instruction_i(instruction_i),
+	//data out
+	.reg1_o(MDReg1), .reg2_o(MDReg2), .reg3_o(MDReg3),//reg 3 is implicitley an immediate value
+	.imm_o(MDImm),
+	.bit1_o(MDBit1), .bit2_o(MDBit2),
+	.enable_o(MDEnable)
+	);	
+	
+	//XO
+	wire [0:9] XOopCode;
+	wire [0:regWidth-1] XOReg1, XOReg2, XOReg3;
+	wire XOBit1, XOBit2;
+	wire XOEnable;
+	XOFormatDecoder #( .opcodeWidth(opcodeWidth), .xOpCodeWidth(10), .regWidth(regWidth), .instructionWidth(instructionWidth))
+	xOFormatDecoder(
+	//command
+	.clock_i(clock_i),
+	.enable_i(enable_i),
+	//data in
+	.instruction_i(instruction_i),
+	//data out
+	.reg1_o(XOReg1), .reg2_o(XOReg2), .reg3_o(XOReg3),
+	.xOpCode_o(XOopCode),
+	.bit1_o(XOBit1), .bit2_o(XOBit2),
+	.enable_o(XOEnable)
 	);
-	
+
 	//Stage 2 - decoder output mux
+	DecodeStage2 #(.opcodeWidth(opcodeWidth),.regWidth(regWidth),.addressSize(addressSize),
+	.DImmWidth(16),.DQimmWidth(12),.DSimmWidth(14),.MDimmWidth(6),
+	.XxoOpcodeWidth(10),.XoOpCodeWidth(9),
+	//instrcution format
+	.formatIndexRange(formatIndexRange),
+	.A(A),.B(B),.D(D),.DQ(DQ),.DS(DS),.DX(DX),.I(I),.M(M),.MD(MD),.MDS(MDS),.SC(SC),.VA(VA),.VC(VC),.VX(VX),.X(X),.XFL(XFL),
+	.XFX(XFX),.XL(XL),.XO(XO),.XS(XS),.XX2(XX2),.XX3(XX3),.XX4(XX4),.Z22(Z22),.Z23(Z23),.INVALID(INVALID))
+	decodeStage2(
+	//command
+	.clock_i(clock_i),
+	.instructionAddress_i(addressBypass),
+	.opcode_i(opcodeBypass),
+	//D input
+	.dEnable_i(DEnable),
+	.dReg1_i(DReg1), .dReg2_i(DReg2),
+	.dImm_i(DImm),
+	.dImmFormat_i(DImmFormat),
+	.dReg2ValOrZero_i(DReg2ValOrZero),
+	.dImmShiftUpBytes_i(DFshiftImmUpBytes),
+	//DQ input
+	.dQEnable_i(DQEnable),
+	.dQReg1_i(DQReg1), .dQReg2_i(DQReg2),
+	.dQImm_i(DQImm),
+	.dQBit_i(DQBit1),
+	//DS input
+	.dSEnable_i(DSEnable),
+	.dSReg1_i(DSReg1), .dSReg2_i(DSReg2),
+	.dSImm_i(DSImm),
+	.dSReg2ValOrZero_i(DSReg2ValOrZero),
+	//X input
+	.xEnable_i(XEnable),
+	.xReg1_i(XReg1), .xReg2_i(XReg2), .xReg3_i(XReg3),
+	.xBit1_i(XBit1),
+	.xReg2ValOrZero_i(XReg2ValOrZero),
+	.xXopcode_i(xOpcode),
+	//MD input
+	.mDEnable_i(MDEnable),
+	.mDReg1_i(MDReg1), .mDReg2_i(MDReg2), .mDReg3_i(MDReg3),
+	.mDImm_i(MDImm),
+	.mDBit1_i(MDBit1), .mDBit2_i(MDBit2),
+	//XO input
+	.xOEnable_i(XOEnable),
+	.xOReg1_i(XOReg1), .xOReg2_i(XOReg2), .xOReg3_i(XOReg3),
+	.xOopcode_i( XOopCode),
+	.xOit1_i(XOBit1), .xOBit2_i(XOBit2),	
+	//outputs 
+	.enable_o(enable_o),
+	.imm_o(imm_o),
+	.immEnable_o(immEnable_i),
+	.reg1_o(reg1_o), .reg2_o(reg2_o), .reg3_o(reg3_o),
+	.reg1Enable_o(reg1Enable_o), .reg2Enable_o(reg2Enable_o), .reg3Enable_o(reg3Enable_o),
+	.reg3IsImmediate_o(reg3IsImmediate_o),
+	.bit1_o(bit1_o), .bit2_o(bit2_o),
+	.bit1Enable_o(bit1Enabled_o), .bit2Enable_o(bit2Enabled_o),
+	.reg2ValOrZero(reg2ValOrZero_o),
+	.instructionAddress_o(instructionAddress_o),
+	.opcode_o(opCode_o),
+	.xOpcode_o(xOpcode_o),
+	.xOpcodeEnable_o(xOpCodeEnabled_o),
+	.instructionFormat_o(instructionFormat_o)
+    );
+
+	 //instruction bypass
+	 always @(posedge clock_i)
+	 begin
+		if(enable_i == 1)
+		begin
+			opcodeBypass <= instruction_i[0:opcodeWidth-1];
+			addressBypass <= instructionAddress_i;
+		end
+	 end
 	
-
-
 endmodule
