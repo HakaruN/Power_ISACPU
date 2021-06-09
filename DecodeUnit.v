@@ -12,11 +12,11 @@ parameter A = 1, parameter B = 2, parameter D = 3, parameter DQ = 4, parameter D
 parameter MD = 9, parameter MDS = 10, parameter SC = 11, parameter VA = 12, parameter VC = 13, parameter VX = 14, parameter X = 15, parameter XFL = 16,
 parameter XFX = 17, parameter XL = 18, parameter XO = 19, parameter XS = 20, parameter XX2 = 21, parameter XX3 = 22, parameter XX4 = 23, parameter Z22 = 24,
 parameter Z23 = 25, parameter INVALID = 0,
-parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, parameter immWidth = 16
+parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter XoOpcodeWidth = 9, parameter regWidth = 5, parameter immWidth = 16,
+parameter DSImmWidth = 14
 )(
 	//command	
 	input wire clock_i,
-	input wire reset_i,
 	input wire enable_i,
 	//data in
 	input wire [0:instructionWidth-1] instruction_i,
@@ -31,7 +31,7 @@ parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, 
 	output wire bit1_o, bit2_o,
 	output wire bit1Enabled_o, bit2Enabled_o,
 	output wire reg2ValOrZero_o,
-	output wire [0:instructionWidth-1] instructionAddress_o,
+	output wire [0:addressSize-1] instructionAddress_o,
 	output wire [0:opcodeWidth-1] opCode_o,
 	output wire [0:xOpCodeWidth-1] xOpcode_o,
 	output wire xOpCodeEnabled_o,
@@ -41,7 +41,7 @@ parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, 
 
 
 	
-	//instruction bypass buffer
+	//instruction bypass buffers
 	reg [0:opcodeWidth-1] opcodeBypass;
 	reg [0:addressSize-1] addressBypass;
 	
@@ -90,10 +90,10 @@ parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, 
 
 	wire [0:regWidth-1] DSReg1, DSReg2;
 	wire DSReg2ValOrZero;
-	wire [0:13] DSImm;//Imm is implicitly extended to 16 bits by adding 2 zeroes on the right size
+	wire [0:DSImmWidth-1] DSImm;//Imm is implicitly extended to 16 bits by adding 2 zeroes on the right size
 	wire DSEnable;
 	//DS format instruction decoder
-	DSFormatDecoder
+	DSFormatDecoder #(.opcodeWidth(opcodeWidth), .regWidth(regWidth), .immWidth(DSImmWidth), .instructionWidth(instructionWidth))
 	dSFormatDecoder(
 	//command
 	.clock_i(clock_i),
@@ -113,7 +113,7 @@ parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, 
 	wire XBit1;
 	wire XEnable;
 	//X format instruction decoder
-	XFormatDecoder #(.opcodeWidth(opcodeWidth), .xOpCodeWidth(10), .regWidth(regWidth), .instructionWidth(instructionWidth))
+	XFormatDecoder #(.opcodeWidth(opcodeWidth), .xOpCodeWidth(xOpCodeWidth), .regWidth(regWidth), .instructionWidth(instructionWidth))
 	xFormatDecoder(
 	//command
 	.clock_i(clock_i),
@@ -124,7 +124,7 @@ parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, 
 	.xOpcode_o(xOpcode),
 	.reg1_o(XReg1), .reg2_o(XReg2), .reg3_o(XReg3),
 	.reg2ValOrZero_o(XReg2ValOrZero),
-	.bit1_o(bit1),
+	.bit1_o(XBit1),
 	.enable_o(XEnable)
 	);	
 	
@@ -146,7 +146,7 @@ parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, 
 	);	
 	
 	//XO
-	wire [0:9] XOopCode;
+	wire [0:XoOpcodeWidth-1] XOopCode;
 	wire [0:regWidth-1] XOReg1, XOReg2, XOReg3;
 	wire XOBit1, XOBit2;
 	wire XOEnable;
@@ -208,7 +208,7 @@ parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, 
 	//XO input
 	.xOEnable_i(XOEnable),
 	.xOReg1_i(XOReg1), .xOReg2_i(XOReg2), .xOReg3_i(XOReg3),
-	.xOopcode_i( XOopCode),
+	.xOopcode_i(XOopCode),
 	.xOit1_i(XOBit1), .xOBit2_i(XOBit2),	
 	//outputs 
 	.enable_o(enable_o),
@@ -235,6 +235,7 @@ parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, 
 			opcodeBypass <= instruction_i[0:opcodeWidth-1];
 			addressBypass <= instructionAddress_i;
 		end
+		
 	 end
 	
 endmodule

@@ -30,7 +30,7 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 	//DS input
 	input wire dSEnable_i,
 	input wire [0:regWidth-1] dSReg1_i, dSReg2_i,
-	input wire [0:DQimmWidth-1] dSImm_i,
+	input wire [0:DSimmWidth-1] dSImm_i,
 	input wire dSReg2ValOrZero_i,
 	//X input
 	input wire xEnable_i,

@@ -20,7 +20,7 @@ module XOFormatDecoder#( parameter opcodeWidth = 6, parameter xOpCodeWidth = 9, 
 	begin
 		if((enable_i == 1) && (instruction_i[0:opcodeWidth-1] == 31))
 		begin
-			xOpCode_o <= instruction_i[22+:xOpCodeWidth];
+			xOpCode_o <= instruction_i[22:30];
 			bit1_o <= instruction_i[21]; bit2_o <= instruction_i[31];
 			reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15]; reg3_o <= instruction_i[16:20];
 			case(instruction_i[22+:xOpCodeWidth])

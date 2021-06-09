@@ -22,7 +22,7 @@ begin
 	begin
 		if(instruction_i[0:opcodeWidth-1] == 30)
 		begin
-			reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15]; reg3_o <= instruction_i[11:15];
+			reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15]; reg3_o <= instruction_i[16:20];
 			bit1_o <= instruction_i[30]; bit2_o <= instruction_i[31];
 			imm_o <= instruction_i[21:26];
 			case(instruction_i[27:29])//check for MD format

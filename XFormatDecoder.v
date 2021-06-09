@@ -25,7 +25,7 @@ begin
 		if(instruction_i[0:5] == 31)//check op opcode
 		begin			
 			xOpcode_o <= instruction_i[21:30];
-			bit1_o <= instruction_i[30];
+			bit1_o <= instruction_i[31];
 			reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15]; reg3_o <= instruction_i[16:20]; 
 			case(instruction_i[21:30])//check x opcode
 				//FixedPoint instructions
@@ -157,7 +157,7 @@ begin
 					reg2ValOrZero_o <= 0; 				
 					enable_o <= 1;
 				end
-				267: begin $display("Deliver A Random Number");
+				755: begin $display("Deliver A Random Number");
 					reg2ValOrZero_o <= 0;				
 					enable_o <= 1;
 				end
@@ -502,10 +502,6 @@ begin
 					reg2ValOrZero_o <= 0;	
 					enable_o <= 1;
 				end
-				974: begin $display("Floating Convert with round Unsigned Doubleword to Single-Precision format");
-					reg2ValOrZero_o <= 0;	
-					enable_o <= 1;
-				end
 				392: begin $display("Floating Round to Integer Nearest");
 					reg2ValOrZero_o <= 0;	
 					enable_o <= 1;
@@ -553,6 +549,18 @@ begin
 					enable_o <= 1;
 				end
 				//Decimal floating point
+			endcase
+		end
+		else if(instruction_i[0:5] == 59)
+		begin
+			xOpcode_o <= instruction_i[21:30];
+			bit1_o <= instruction_i[30];
+			reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15]; reg3_o <= instruction_i[16:20]; 
+			case(instruction_i[21:30])//check the Xopcode
+				974: begin $display("Floating Convert with round Unsigned Doubleword to Single-Precision format");
+					reg2ValOrZero_o <= 0;	
+					enable_o <= 1;
+				end
 			endcase
 		end
 	end
