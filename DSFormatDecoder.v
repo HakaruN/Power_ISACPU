@@ -5,11 +5,13 @@
 //////////////////////////////////////////////////////////////////////////////////
 module DSFormatDecoder#(parameter opcodeWidth = 6, parameter regWidth = 5, parameter immWidth = 14, parameter instructionWidth = 32
 )(
-	//command
+	//command in
 	input wire clock_i,
 	input wire enable_i,
 	//data in
 	input wire [0:instructionWidth-1] instruction_i,
+	//command out
+	output reg stall_o,
 	//data out
 	output reg [0:regWidth-1] reg1_o, reg2_o,
 	output reg reg2ValOrZero_o,//indicates that if the register addr is zero, a zero litteral is to be used not reg zero
@@ -27,15 +29,15 @@ begin
 		case(instruction_i[30:31])		
 			2: begin $display("Load Word Algebraic");				
 				reg2ValOrZero_o <= 1;
-				enable_o <= 1;
+				enable_o <= 1; stall_o <= 0;
 			end
 			0: begin $display("Load Doubleword");
 				reg2ValOrZero_o <= 1;
-				enable_o <= 1;
+				enable_o <= 1; stall_o <= 0;
 			end
 			1: begin $display("Load Doubleword with Update");
 				reg2ValOrZero_o <= 0;
-				enable_o <= 1;
+				enable_o <= 1; stall_o <= 0;
 			end
 			default begin $display("Invalid or unsupported instruction"); enable_o <= 0; end
 		endcase
@@ -47,23 +49,26 @@ begin
 		case(instruction_i[30:31])
 			0: begin $display("Store Doubleword");
 				reg2ValOrZero_o <= 1;
-				enable_o <= 1;
+				enable_o <= 1; stall_o <= 0;
 			end
 			2: begin $display("Store Quadword");
 				reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15];
 				reg2ValOrZero_o <= 1;
-				enable_o <= 1;
+				enable_o <= 1; stall_o <= 0;
 			end
 			1: begin $display("Store Doubleword with Update");
 				reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15];
 				reg2ValOrZero_o <= 0;
-				enable_o <= 1;
+				enable_o <= 1; stall_o <= 0;
 			end
-			default begin $display("Invalid or unsupported instruction"); enable_o <= 0; end
+			default begin $display("Invalid or unsupported instruction"); enable_o <= 0;  stall_o <= 0; end
 		endcase
 	end
 	else
+	begin
 		enable_o <= 0;
+		stall_o <= 0;
+	end
 end
 
 endmodule

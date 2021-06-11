@@ -85,6 +85,7 @@ module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, 
 	
 	//decode
 	//decode output
+	wire [0:5] decodeStall;
 	wire decodeEnable;
 	wire [0:63] decodeImm;
 	wire decodeImmEnable;
@@ -104,12 +105,14 @@ module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, 
 	.opcodeWidth(opcodeWidth), .xOpCodeWidth(xOpCodeWidth), .regWidth(regWidth))
 	decodeUnit
 	(
-	//command	
+	//command in
 	.clock_i(clock_i),
 	.enable_i(fetchEnable_o),
 	//data in
 	.instruction_i(fetchedInstruction),
 	.instructionAddress_i(fetchedInstructionAddress),
+	//command out
+	.stall_o(decodeStall),
 	//data out
 	.enable_o(decodeEnable),
 	.imm_o(decodeImm),

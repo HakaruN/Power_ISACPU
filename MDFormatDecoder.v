@@ -4,11 +4,13 @@
 //////////////////////////////////////////////////////////////////////////////////
 module MDFormatDecoder#(parameter opcodeWidth = 6, parameter regWidth = 5, parameter immWidth = 6, parameter instructionWidth = 32
 )(
-	//command
+	//command in
 	input wire clock_i,
 	input wire enable_i,
 	//data in
 	input wire [0:instructionWidth-1] instruction_i,
+	//command out
+	output reg stall_o,
 	//data out
 	output reg [0:regWidth-1] reg1_o, reg2_o, reg3_o,//reg 3 is implicitley an immediate value
 	output reg [0:immWidth-1] imm_o,
@@ -27,32 +29,35 @@ begin
 			imm_o <= instruction_i[21:26];
 			case(instruction_i[27:29])//check for MD format
 				0: begin $display("Rotate Left Doubleword Immediate then Clear Left");				
-					enable_o <= 1;
+					enable_o <= 1; stall_o <= 0;
 				end
 				1: begin $display("Rotate Left Doubleword Immediate then Clear Right");
-					enable_o <= 1;
+					enable_o <= 1; stall_o <= 0;
 				end
 				2: begin $display("Rotate Left Doubleword Immediate then Clear");
-					enable_o <= 1;
+					enable_o <= 1; stall_o <= 0;
 				end
 				3: begin $display("Rotate Left Doubleword Immediate then Mask Insert");
-					enable_o <= 1;
+					enable_o <= 1; stall_o <= 0;
 				end
 				default : enable_o <= 0;
 			endcase
 			//DONT USE DEFAULT IN ANY CASE/SWITCH BELOW (either that or only use a default in the last case statement)
 			case(instruction_i[27:30])//check for MDS format
 				8: begin $display("Rotate Left Doubleword then Clear Left");
-					enable_o <= 1;
+					enable_o <= 1; stall_o <= 0;
 				end
 				9: begin $display("Rotate Left Doubleword then Clear Right");
-					enable_o <= 1;
+					enable_o <= 1; stall_o <= 0;
 				end
 			endcase			
 		end
 	end
 	else
+	begin
 		enable_o <= 0;
+		stall_o <= 0;
+	end
 end
 
 

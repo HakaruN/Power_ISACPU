@@ -13,20 +13,25 @@ parameter MD = 9, parameter MDS = 10, parameter SC = 11, parameter VA = 12, para
 parameter XFX = 17, parameter XL = 18, parameter XO = 19, parameter XS = 20, parameter XX2 = 21, parameter XX3 = 22, parameter XX4 = 23, parameter Z22 = 24,
 parameter Z23 = 25, parameter INVALID = 0,
 parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter XoOpcodeWidth = 9, parameter regWidth = 5, parameter immWidth = 16,
-parameter DSImmWidth = 14, parameter DImmWith = 16, parameter DQImmWidth = 12, parameter MDImmWidth = 6
+parameter DSImmWidth = 14, parameter DImmWith = 16, parameter DQImmWidth = 12, parameter MDImmWidth = 6,
+parameter regImm = 0, parameter regRead = 1, parameter regWrite = 2, parameter regReadWrite = 3,//indicates if a registers use is immediate, read, write or both
+parameter numStallLines = 6//should be the number of format specific decoders in the decode unit
 )(
-	//command	
+	//command int
 	input wire clock_i,
 	input wire enable_i,
 	//data in
 	input wire [0:instructionWidth-1] instruction_i,
 	input wire [0:addressSize-1] instructionAddress_i,
+	//command out 
+	output wire [0:numStallLines-1] stall_o,//a stall line for each format decoder
 	//data out
 	output wire enable_o,
-	output wire [0:63] imm_o,
+	output wire [0:DImmWith-1] imm_o,
 	output wire immEnable_o,
 	output wire [0:regWidth-1] reg1_o, reg2_o, reg3_o,
 	output wire reg1Enable_o, reg2Enable_o, reg3Enable_o,
+	output wire [0:1] reg1Use_o, reg2Use_o, reg3Use_o,
 	output wire reg3IsImmediate_o,
 	output wire bit1_o, bit2_o,
 	output wire bit1Enabled_o, bit2Enabled_o,
@@ -37,9 +42,6 @@ parameter DSImmWidth = 14, parameter DImmWith = 16, parameter DQImmWidth = 12, p
 	output wire xOpCodeEnabled_o,
 	output wire [0:formatIndexRange-1] instructionFormat_o
 	);
-	
-
-
 	
 	//instruction bypass buffers
 	reg [0:opcodeWidth-1] opcodeBypass;
@@ -60,6 +62,8 @@ parameter DSImmWidth = 14, parameter DImmWith = 16, parameter DQImmWidth = 12, p
 	.enable_i(enable_i),
 	//data in
 	.instruction_i(instruction_i),
+	//command out
+	.stall_o(stall_o[0]),
 	//data out
 	.reg1_o(DReg1), .reg2_o(DReg2),
 	.reg2ValOrZero_o(DReg2ValOrZero),
@@ -82,6 +86,8 @@ parameter DSImmWidth = 14, parameter DImmWith = 16, parameter DQImmWidth = 12, p
 	.enable_i(enable_i),
 	//data in
 	.instruction_i(instruction_i),
+	//command out
+	.stall_o(stall_o[1]),
 	//data out
 	.reg1_o(DQReg1), .reg2_o(DQReg2),
 	.imm_o(DQImm),
@@ -101,6 +107,8 @@ parameter DSImmWidth = 14, parameter DImmWith = 16, parameter DQImmWidth = 12, p
 	.enable_i(enable_i),
 	//data in
 	.instruction_i(instruction_i),
+	//command out
+	.stall_o(stall_o[2]),
 	//data out
 	.reg1_o(DSReg1), .reg2_o(DSReg2),
 	.reg2ValOrZero_o(DSReg2ValOrZero),
@@ -121,6 +129,8 @@ parameter DSImmWidth = 14, parameter DImmWith = 16, parameter DQImmWidth = 12, p
 	.enable_i(enable_i),
 	//data in
 	.instruction_i(instruction_i),
+	//command out
+	.stall_o(stall_o[3]),
 	//data out
 	.xOpcode_o(xOpcode),
 	.reg1_o(XReg1), .reg2_o(XReg2), .reg3_o(XReg3),
@@ -139,6 +149,8 @@ parameter DSImmWidth = 14, parameter DImmWith = 16, parameter DQImmWidth = 12, p
 	.enable_i(enable_i),
 	//data in
 	.instruction_i(instruction_i),
+	//command out
+	.stall_o(stall_o[4]),
 	//data out
 	.reg1_o(MDReg1), .reg2_o(MDReg2), .reg3_o(MDReg3),//reg 3 is implicitley an immediate value
 	.imm_o(MDImm),
@@ -158,6 +170,8 @@ parameter DSImmWidth = 14, parameter DImmWith = 16, parameter DQImmWidth = 12, p
 	.enable_i(enable_i),
 	//data in
 	.instruction_i(instruction_i),
+	//command out
+	.stall_o(stall_o[5]),
 	//data out
 	.reg1_o(XOReg1), .reg2_o(XOReg2), .reg3_o(XOReg3),
 	.xOpCode_o(XOopCode),
