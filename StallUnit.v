@@ -6,12 +6,29 @@
 //////////////////////////////////////////////////////////////////////////////////
 module StallUnit(
     input clock_i,
-    input reset_i
+    input reset_i,
+	 //stall inputs
+	 input wire fetchCacheMissStall_i,
+	 input wire regFileStall_i,
+	 
+	 //output reg output stall lines
+	 output reg fetchFullStall_o,
+	 output reg fetchTagQueryStall_o
     );
 
 	always @(negedge clock_i)
 	begin
-		
+	
+		if(l1iCacheMissStall_i == 1)//check for a stall due to cache miss
+		begin
+			$display("Stalling on cache miss");
+			fetchTagQueryStall_o <= 1;
+		end
+		else
+		begin
+			fetchFullStall_o <= 0;
+			fetchTagQueryStall_o <= 0;
+		end
 	end
 
 endmodule

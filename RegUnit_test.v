@@ -146,13 +146,14 @@ module RegUnit_test;
 		reg1WritebackAddress = 0;reg2WritebackAddress = 0;
 
 		//reset
+		$display("-------RESET--------");
 		reset = 1;
 		clock = 1;
 		#1;
 		reset = 0;
 		clock = 0;
 		#1;
-
+		$display("-------Write to some regs--------");
 		//write to some regs
 		reg1WritebackAddress = 5; reg2WritebackAddress = 1;//write to reg 5 and 1
 		reg1WritebackData = 10; reg2WritebackData = 7;//write 10 and 7 respectivly
@@ -162,12 +163,13 @@ module RegUnit_test;
 		clock = 0;
 		#1;
 		
-		//read the reg that we just wrote and write to some more regs
+		$display("------Read the reg we just wrote---------");
+		//read the reg that we just wrote to 
 		//read
 		enable = 1;
-		reg1 = 5;reg2 = 1;
-		reg1Enable = 1;reg2Enable = 1;
-		reg1Use = 2;reg2Use = 3;//Imm = 0, Read = 1, Write = 2, Read/Write = 3
+		reg1 = 5; reg2 = 1;
+		reg1Enable = 1; reg2Enable = 1;
+		reg1Use = 1; reg2Use = 1;//Imm = 0, Read = 1, Write = 2, Read/Write = 3
 		instructionAddress = 1;
 		opCode = 25;
 		xOpCodeEnabled = 0;
@@ -180,7 +182,25 @@ module RegUnit_test;
 		#1;
 		clock = 0;
 		#1;
+		$display("------Cause a writeback:---------");
+		
+		//cause a writeback
+		enable = 1;
+		reg1 = 5; reg2 = 1;
+		reg1Enable = 1; reg2Enable = 1;
+		reg1Use = 2; reg2Use = 3;//Imm = 0, Read = 1, Write = 2, Read/Write = 3
+		instructionAddress = 1;
+		opCode = 25;
+		xOpCodeEnabled = 0;
+		instructionFormat = 0;
 		reg1isWriteback = 0; reg2isWriteback = 0;
+		clock = 1;
+		#1;
+		clock = 0;
+		#1;
+		
+		
+		$display("--------Read from a reg that is pending writeback--------");
 		//attempt to read the regs that are pending writeback, should see a stall and the output low
 		enable = 1;
 		reg1 = 2;reg2 = 3;
@@ -194,7 +214,10 @@ module RegUnit_test;
 		#1;
 		clock = 0;
 		#1;
+		$display("");
 		//write the data back and check that the writebackpending flags go low.
+		
+		
 	end
       
 endmodule

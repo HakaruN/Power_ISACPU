@@ -23,6 +23,7 @@ module CachelineParser #( parameter offsetSize = 5, parameter indexSize = 8, par
 	//command
 	input wire clock_i,
 	input wire flushPipeline_i,
+	input wire fetchUnitStall_i,
 	//parse input
 	input wire enable_i,
 	input wire [0:cachelineSizeInBits-1] cacheline_i,
@@ -51,7 +52,7 @@ module CachelineParser #( parameter offsetSize = 5, parameter indexSize = 8, par
 		else
 		begin
 			enable_o <= enable_i;
-			if(enable_i)
+			if((enable_i == 1) && (fetchUnitStall_i == 0))
 			begin
 				$display("Stage 4 writing instruction out for decoders");
 				tag_o <= tag_i;

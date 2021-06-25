@@ -18,6 +18,8 @@ module CacheTagQuery #( parameter offsetSize = 5, parameter indexSize = 8, param
 	input wire reset_i,
 	input wire fetchEnable_i,
 	input wire flushPipeline_i,
+	input wire tagQueryStall_i,
+	input wire fetchUnitStall_i,
 	//fetch input
 	input wire [0:tagSize-1] tag_i,
 	input wire [0:indexSize-1] index_i,
@@ -73,7 +75,7 @@ module CacheTagQuery #( parameter offsetSize = 5, parameter indexSize = 8, param
 		begin
 			//update buffers
 			bypassEnable <= fetchEnable_i;
-			if((fetchEnable_i == 1) && (updateEnable_i == 0))
+			if((fetchEnable_i == 1) && (updateEnable_i == 0) && (tagQueryStall_i = 0) && (fetchUnitStall_i = 0))//check if enabled, not updating and not stalled
 			begin
 				bypassTag <= tag_i;
 				bypassIndex <= index_i;

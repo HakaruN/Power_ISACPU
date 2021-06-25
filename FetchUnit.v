@@ -1,6 +1,7 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-//
+//The fetch unit is responsible for delivering instructions to the core. The fetch unit 
+//recives an address (from the PC or branch target) to fetch from, it will search the L1i cache and resolve any cache misses.
 //////////////////////////////////////////////////////////////////////////////////
 module FetchUnit #( parameter offsetSize = 5, parameter indexSize = 8, parameter tagSize = 64 - (offsetSize + indexSize), parameter addressSize = 64,
 	parameter cachelineSize = 2**offsetSize, cachelineSizeBits = 2**offsetSize*8, parameter numCachelines = 2**indexSize, parameter parsePayloadSizeBits=32)(
@@ -8,6 +9,8 @@ module FetchUnit #( parameter offsetSize = 5, parameter indexSize = 8, parameter
 	input wire clock_i,
 	input wire reset_i,
 	input wire flushPipeline_i,
+	input wire stallTagQuery_i,
+	input wire stallFullUnit_i,
 	//fetch in
 	input wire enable_i,
 	input wire [0:addressSize-1] address_i,
@@ -37,7 +40,9 @@ module FetchUnit #( parameter offsetSize = 5, parameter indexSize = 8, parameter
 		.clock_i(clock_i), 
 		.reset_i(reset_i), 
 		.flushPipeline_i(flushPipeline_i),
-		//fetch in
+		.tagQueryStall_i(stallTagQuery_i),
+		.fetchUnitStall_i(stallFullUnit_i),
+		//fetch in	
 		.fetchEnable_i(enable_i), 
 		.tag_i(address_i[(offsetSize + indexSize)+:tagSize]), 
 		.index_i(address_i[offsetSize+:indexSize]), 
@@ -64,25 +69,25 @@ module FetchUnit #( parameter offsetSize = 5, parameter indexSize = 8, parameter
 	CacheHitMissCheck 
 	cacheHitMissCheck (
 		//command
-		.clock_i(clock_i), 
-		.enable_i(tagQueryEnableOut), 
+		.clock_i(clock_i),
+		.enable_i(tagQueryEnableOut),
 		.flushPipeline_i(flushPipeline_i),
 		//fetch input
-		.queriedTag_i(tagQueryQueriedTagOut), 
-		.fetchTag_i(tagQueryFetchedTagOut), 
-		.index_i(tagQueryIndexOut), 
-		.offset_i(tagQueryOffsetOut), 
+		.queriedTag_i(tagQueryQueriedTagOut),
+		.fetchTag_i(tagQueryFetchedTagOut),
+		.index_i(tagQueryIndexOut),
+		.offset_i(tagQueryOffsetOut),
 		//cache miss inputs - allows a cache miss' state in this stage to be cleared
 		.isCacheMissResolved_i(cacheUpdateEnable_i),
 		//cache update output (if cache miss memory request comes from here) - goes out to core		
-		.newTag_o(newAddress_o[(offsetSize + indexSize)+:tagSize]), 
-		.newIndex_o(newAddress_o[offsetSize+:indexSize]), 
-		.newOffset_o(newAddress_o[0+:offsetSize]), 
-		.isCacheMiss_o(isCacheMiss_o), 
+		.newTag_o(newAddress_o[(offsetSize + indexSize)+:tagSize]),
+		.newIndex_o(newAddress_o[offsetSize+:indexSize]),
+		.newOffset_o(newAddress_o[0+:offsetSize]),
+		.isCacheMiss_o(isCacheMiss_o),
 		//fetch output
-		.tag_o(CacheHitMissTagOut), 
-		.index_o(CacheHitMissIndexOut), 
-		.offset_o(CacheHitMissOffsetOut), 
+		.tag_o(CacheHitMissTagOut),
+		.index_o(CacheHitMissIndexOut),
+		.offset_o(CacheHitMissOffsetOut),
 		.enable_o(CacheHitMissEnableOut)
 	);
 	

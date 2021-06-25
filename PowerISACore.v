@@ -25,6 +25,7 @@ module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, 
 	reg fetchEnable;//enable signal to the fetch unit - NOTE: the enable must be zero when isCacheMiss == 1
 	reg [0:addressSize-1] PC;//fetch Address
 	
+	
 	//memory controller out
 	wire [0:blockSize-1] memoryReadBlock;//the block that came from memory
 	wire [0:addressSize-1] memoryReadAddress;//the address that was read from memory (or written to actually maybe)
@@ -178,5 +179,14 @@ module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, 
     .instructionFormat_o(instructionFormat_o)
     );
 
+
+	//stall unit
+	StallUnit stallUnit(
+		//stall inputs
+		.l1iCacheMissStall_i(isCacheMiss),
+		.regFileStall_i(),
+		//stall outputs
+		.fetchStall_o()
+	);
 
 endmodule

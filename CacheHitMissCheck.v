@@ -8,6 +8,7 @@ module CacheHitMissCheck #( parameter offsetSize = 5, parameter indexSize = 8, p
 	input wire clock_i,
 	input wire enable_i,
 	input wire flushPipeline_i,
+	input wire fetchUnitStall_i,
 	//fetch input
 	input wire [0:tagSize-1] fetchTag_i,
 	input wire [0:tagSize] queriedTag_i,
@@ -29,7 +30,7 @@ module CacheHitMissCheck #( parameter offsetSize = 5, parameter indexSize = 8, p
 
 	always @(posedge clock_i)
 	begin
-		if(flushPipeline_i == 1 || isCacheMissResolved_i == 1)
+		if(flushPipeline_i == 1 || isCacheMissResolved_i == 1)//flush pipeline
 		begin
 			$display("Stage 2 flushing pipeline");
 			tag_o <= 0;
@@ -43,7 +44,7 @@ module CacheHitMissCheck #( parameter offsetSize = 5, parameter indexSize = 8, p
 		end
 		else
 		begin			
-			if(enable_i == 1)
+			if(enable_i == 1 && fetchUnitStall_i == 0)
 			begin			
 				//	Check valid bit:							//check tags match	
 				if(((queriedTag_i & 52'h8000000000000) > 0) && (queriedTag_i[1:tagSize] == fetchTag_i))
@@ -60,7 +61,7 @@ module CacheHitMissCheck #( parameter offsetSize = 5, parameter indexSize = 8, p
 					newTag_o <= fetchTag_i;
 					newIndex_o <= index_i;
 					newOffset_o <= offset_i;
-					isCacheMiss_o <= 1;				
+					isCacheMiss_o <= 1;
 					enable_o <= 0;
 					$display("Stage 2 cache miss");
 				end

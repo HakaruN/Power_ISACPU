@@ -56,8 +56,6 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 	
 	always @(posedge clock_i)//negedge of clock reads
 	begin
-		$display("reg's %d, %d, %d", reg1_i, reg2_i, reg3_i);
-		$display("isPending writeback: %d, %d, %d", isRegPendingWriteback[reg1_i], isRegPendingWriteback[reg2_i], isRegPendingWriteback[reg3_i]);
 		if(reset_i == 1)
 		begin
 			stall_o <= 0;
@@ -72,6 +70,10 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 		else if(enable_i == 1)
 		begin
 			$display("Reg read");
+			$display("Reading reg's %d, %d, %d", reg1_i, reg2_i, reg3_i);
+			$display("isPending writeback: %d, %d, %d", isRegPendingWriteback[reg1_i], isRegPendingWriteback[reg2_i], isRegPendingWriteback[reg3_i]);
+			$display("reg's use: %d, %d, %d (regImm = 0, regRead = 1, regWrite = 2, regReadWrite = 3)",reg1Use_i, reg2Use_i, reg3Use_i);
+				
 			//if any registers are pending a writeback, we must stall and can't enable the outputs until the registers are available to read from
 			if(isRegPendingWriteback[reg1_i] == 1 || isRegPendingWriteback[reg2_i] == 1 || isRegPendingWriteback[reg3_i] == 1)
 			begin
@@ -116,7 +118,7 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 				
 				//resolve register reads
 				//Imm = 0, Read = 1, Write = 2, Read/Write = 3
-				if(reg1Enable_i)
+				if(reg1Enable_i == 1)
 				begin
 					case(reg1Use_i)
 						0:begin operand1_o <= reg1_i; operand1Enable_o <= 1; operand1Writeback_o <= 0; end//reg = imm
@@ -127,14 +129,19 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 					operand1Enable_o <= 1;
 				end
 				else
-					operand1Enable_o <= 0;
-					
-				if(reg2Enable_i)
 				begin
+					operand1Enable_o <= 0;
+				end
+					
+				if(reg2Enable_i == 1)
+				begin
+					$display("Reg 2 enabled");
 					if(reg2ValOrZero_i == 1)
 					begin
+						$display("reg2ValorZero = 1");
 						if(reg2_i == 0)//reg2 val or zero == 1 and reg2 == 0
 						begin
+							$display("Reg 2 is zero");
 							operand2_o <= 0;	
 								case(reg2Use_i)
 									0:begin operand2_o <=0; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = imm
@@ -145,6 +152,7 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 						end
 						else//reg2 val or zero == 1 and reg2 != 0
 						begin
+							$display("Reg 2 is not zero");
 							case(reg2Use_i)
 								0:begin operand2_o <= reg2_i; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = imm
 								1:begin operand2_o <= regFile[reg2_i]; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = read
@@ -155,6 +163,7 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 					end
 					else
 					begin//reg2 val or zero == 0
+						$display("reg2ValorZero = 0");
 						case(reg2Use_i)
 							0:begin operand2_o <= reg2_i; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = imm
 							1:begin operand2_o <= regFile[reg2_i]; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = read
@@ -165,7 +174,10 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 					operand2Enable_o <= 1;
 				end
 				else
+				begin
 					operand2Enable_o <= 0;
+					$display("reg2 disabled");
+				end
 				
 				if(reg3Enable_i == 1)
 				begin
@@ -202,12 +214,14 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 			//perform reg writebacks
 			if(reg1isWriteback_i == 1)
 			begin
+				$display("reg 1 writeback. Writing %d to reg %d", reg1WritebackData_i, reg1WritebackAddress_i);
 				regFile[reg1WritebackAddress_i] <= reg1WritebackData_i;
 				isRegPendingWriteback[reg1WritebackAddress_i] <= 0;//reset the iswritebackpending flag for the register
 			end
 			
 			if(reg2isWriteback_i == 1)
 			begin
+				$display("reg 2 writeback. Writing %d to reg %d", reg2WritebackData_i, reg2WritebackAddress_i);
 				regFile[reg2WritebackAddress_i] <= reg2WritebackData_i;
 				isRegPendingWriteback[reg2WritebackAddress_i] <= 0;
 			end

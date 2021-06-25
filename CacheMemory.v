@@ -16,6 +16,7 @@ module CacheMemory #( parameter offsetSize = 5, parameter indexSize = 8, paramet
 	input wire clock_i,
 	input wire reset_i,
 	input wire flushPipeline_i,
+	input wire fetchUnitStall_i,
 	//fetch in
 	input wire fetchEnable_i,
 	input wire [0:tagSize-1] tag_i,
@@ -73,7 +74,7 @@ module CacheMemory #( parameter offsetSize = 5, parameter indexSize = 8, paramet
 		begin
 			//update buffers
 			bypassEnable <= fetchEnable_i;
-			if((fetchEnable_i == 1) && (updateEnable_i == 0))//if were fetching and not updating
+			if((fetchEnable_i == 1) && (updateEnable_i == 0) && (fetchUnitStall_i == 0))//if were fetching and not updating
 			begin			
 				bypassTag <= tag_i;
 				bypassIndex <= index_i;
@@ -86,7 +87,7 @@ module CacheMemory #( parameter offsetSize = 5, parameter indexSize = 8, paramet
 				$display("TIMING ERROR: Instruction cache memory canot read and write at the same time (collision is possible)");
 				
 			//write out buffers
-			if((bypassEnable == 1) && (updateEnable_i == 0))
+			if((bypassEnable == 1) && (updateEnable_i == 0) && (fetchUnitStall_i == 0))
 			begin
 				tag_o <= bypassTag;
 				index_o <= bypassIndex;
@@ -95,7 +96,7 @@ module CacheMemory #( parameter offsetSize = 5, parameter indexSize = 8, paramet
 				cacheline_o <= cachelineFromMemory;
 				$display("Stage 3 writing buffers out");
 			end
-			else if((bypassEnable == 0) && (updateEnable_i == 1))
+			else if((bypassEnable == 0) && (updateEnable_i == 1) && (fetchUnitStall_i == 0))
 			begin
 				tag_o <= newTag_i;
 				index_o <= newIndex_i;
@@ -104,7 +105,7 @@ module CacheMemory #( parameter offsetSize = 5, parameter indexSize = 8, paramet
 				cacheline_o <= newCacheline_i;
 				$display("Stage 3 updating cachelines");
 			end
-			else if((bypassEnable == 1) && (updateEnable_i == 1))
+			else if((bypassEnable == 1) && (updateEnable_i == 1) && (fetchUnitStall_i == 0))
 			begin
 				$display("TIMING ERROR: Cache memory canot read and write at the same time (collision is possible)");
 			end
