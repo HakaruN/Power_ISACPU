@@ -61,11 +61,15 @@ module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, 
 	wire [0:addressSize-1] fetchedInstructionAddress;
 	wire [0:instructionSize-1] fetchedInstruction;
 	wire fetchEnable_o;
+	wire stallTagQuery;
+	wire stallFullUnit;
 	FetchUnit fetchUnit (
 		//control
 		.clock_i(clock_i), 
 		.reset_i(reset_i), 
 		.flushPipeline_i(flushPipeline),
+		.tagQueryStall_i(stallTagQuery),
+		.fetchUnitStall_i(stallFullUnit),
 		//fetch input
 		.enable_i(fetchEnable), 
 		.address_i(PC), 
@@ -179,14 +183,14 @@ module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, 
     .instructionFormat_o(instructionFormat_o)
     );
 
-
 	//stall unit
 	StallUnit stallUnit(
 		//stall inputs
 		.l1iCacheMissStall_i(isCacheMiss),
 		.regFileStall_i(),
 		//stall outputs
-		.fetchStall_o()
+		.fetchFullStall_o(stallFullUnit),
+		.fetchTagQueryStall_o(stallTagQuery)
 	);
 
 endmodule

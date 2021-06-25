@@ -72,6 +72,7 @@ module FetchUnit #( parameter offsetSize = 5, parameter indexSize = 8, parameter
 		.clock_i(clock_i),
 		.enable_i(tagQueryEnableOut),
 		.flushPipeline_i(flushPipeline_i),
+		.fetchUnitStall_i(stallFullUnit_i),
 		//fetch input
 		.queriedTag_i(tagQueryQueriedTagOut),
 		.fetchTag_i(tagQueryFetchedTagOut),
@@ -104,6 +105,7 @@ module FetchUnit #( parameter offsetSize = 5, parameter indexSize = 8, parameter
 		.clock_i(clock_i), 
 		.reset_i(reset_i), 
 		.flushPipeline_i(flushPipeline_i),
+		.fetchUnitStall_i(stallFullUnit_i),
 		//fetch input
 		.fetchEnable_i(CacheHitMissEnableOut), 
 		.tag_i(CacheHitMissTagOut), 
@@ -129,6 +131,7 @@ module FetchUnit #( parameter offsetSize = 5, parameter indexSize = 8, parameter
 		//command
 		.clock_i(clock_i),
 		.flushPipeline_i(flushPipeline_i),
+		.fetchUnitStall_i(stallFullUnit_i),
 		//fetch in
 		.enable_i(cacheMemoryEnableOut), 
 		.cacheline_i(cacheMemoryCachelineOut), 
