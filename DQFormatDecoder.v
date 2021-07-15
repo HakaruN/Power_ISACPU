@@ -18,6 +18,7 @@ parameter signedImm = 1, parameter unsignedImm = 0, parameter regImm = 0, parame
 	output reg [0:immWidth-1] imm_o,
 	output reg immFormat_o,//0 = unsignedImm, 1 = signedImm (sign extended to 64b down the pipe)
 	output reg bit_o,
+	output reg [0:1] functionalUnitCode_o,
 	output reg enable_o
 	);
 

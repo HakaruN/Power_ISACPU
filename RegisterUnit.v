@@ -1,5 +1,6 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
+//NOTE: Reg unit is inadequetly tested, testing needs to ensure RAW hazards are avoided
 //////////////////////////////////////////////////////////////////////////////////
 module RegisterUnit #(parameter instructionWidth = 32, parameter addressSize = 64,
 parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter immWith = 16, parameter regWidth = 5, parameter numRegs = 2**regWidth, parameter formatIndexRange = 5,
@@ -24,6 +25,7 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 	input wire [0:opcodeWidth-1] opCode_i,
 	input wire [0:xOpCodeWidth-1] xOpcode_i,
 	input wire xOpCodeEnabled_i,
+	input wire [0:1] functionalUnitCode_i,
 	input wire [0:formatIndexRange-1] instructionFormat_i,
 	//data in (reg writeback)
 	input wire [0:addressSize-1] reg1WritebackData_i, reg2WritebackData_i,
@@ -44,10 +46,9 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 	output reg [0:opcodeWidth-1] opCode_o,
 	output reg [0:xOpCodeWidth-1] xOpCode_o,
 	output reg xOpCodeEnabled_o,
+	output reg [0:1] functionalUnitCode_o,
 	output reg [0:formatIndexRange-1] instructionFormat_o
-	
-	
-    );
+	);
 	integer i;
 	//an entry for each register, if a register is pendint writeback it's entry is set to 1. If an entry is set to 1 it cannot be read and must be stalled
 	reg isRegPendingWriteback [0:31];
@@ -106,7 +107,7 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 				xOpCodeEnabled_o <= xOpCodeEnabled_i;
 				instructionFormat_o <= instructionFormat_i;
 				instructionAddress_o <= instructionAddress_i;
-				
+				functionalUnitCode_o <= functionalUnitCode_i;
 				//pass through imm value
 				if(immEnable_i == 1)
 				begin

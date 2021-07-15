@@ -15,6 +15,7 @@ module MDFormatDecoder#(parameter opcodeWidth = 6, parameter regWidth = 5, param
 	output reg [0:regWidth-1] reg1_o, reg2_o, reg3_o,//reg 3 is implicitley an immediate value
 	output reg [0:immWidth-1] imm_o,
 	output reg bit1_o, bit2_o,
+	output reg [0:1] functionalUnitCode_o,
 	output reg enable_o
 	);
 

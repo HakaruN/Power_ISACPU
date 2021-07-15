@@ -19,6 +19,7 @@ parameter signedImm = 1, parameter unsignedImm = 0, parameter regImm = 0, parame
 	output reg [0:immWidth-1] imm_o,
 	output reg immFormat_o,//0 = unsignedImm, 1 = signedImm (sign extended to 64b down the pipe)
 	output reg [0:1]shiftImmUpBytes_o,//EG shiftImmUpBytes_o == 2, the extended immediate will be { 32'h0000_0000, immFormat_o, 16'h0000}, if shiftImmUpBytes_o == 4: {immFormat_o, 48'h0000_0000_0000}
+	output reg [0:1] functionalUnitCode_o,
 	output reg enable_o
 	);
 

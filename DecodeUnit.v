@@ -40,6 +40,7 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	output wire [0:opcodeWidth-1] opCode_o,
 	output wire [0:xOpCodeWidth-1] xOpcode_o,
 	output wire xOpCodeEnabled_o,
+	output wire [0:1] functionalUnitCode_o,
 	output wire [0:formatIndexRange-1] instructionFormat_o
 	);
 	
@@ -54,6 +55,7 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	wire DImmFormat;//0 = unsignedImm, 1 = signedImm (sign extended to 64b down the pipe)
 	wire [0:1] DFshiftImmUpBytes;//EG shiftImmUpBytes_o == 2, the extended immediate will be { 32'h0000_0000, immFormat_o, 16'h0000}, if shiftImmUpBytes_o == 4: {immFormat_o, 48'h0000_0000_0000}
 	wire DEnable;	
+	wire [0:1] DfunctionalUnitCode;
 	//D format instruction decoder
 	DFormatDecoder #(.opcodeWidth(opcodeWidth), .regWidth(regWidth), .immWidth(DImmWith), .instructionWidth(instructionWidth))
 	dFormatDecoder(
@@ -70,6 +72,9 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	.imm_o(DImm),
 	.immFormat_o(DImmFormat),
 	.shiftImmUpBytes_o(DFshiftImmUpBytes),
+	//functional unit code
+	.functionalUnitCode_o(DfunctionalUnitCode),
+	//enable
 	.enable_o(DEnable)
 	);	
 	
@@ -77,6 +82,8 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	wire [0:11] DQImm;
 	wire DQBit1;
 	wire DQEnable;
+	wire [0:1] DQfunctionalUnitCode;
+		
 	//DQ format instruction decoder
 	//All dq instructions are implicitly reg2ValOrZero=1 and imm shift up 4 bits
 	DQFormatDecoder#(.opcodeWidth(opcodeWidth), .regWidth(regWidth), .immWidth(DQImmWidth), .instructionWidth(instructionWidth))
@@ -92,6 +99,9 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	.reg1_o(DQReg1), .reg2_o(DQReg2),
 	.imm_o(DQImm),
 	.bit_o(DQBit1),
+	//functional unit code
+	.functionalUnitCode_o(DQfunctionalUnitCode),
+	//enable
 	.enable_o(DQEnable)
 	);
 
@@ -99,6 +109,7 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	wire DSReg2ValOrZero;
 	wire [0:DSImmWidth-1] DSImm;//Imm is implicitly extended to 16 bits by adding 2 zeroes on the right size
 	wire DSEnable;
+	wire [0:1] DSfunctionalUnitCode;
 	//DS format instruction decoder
 	DSFormatDecoder #(.opcodeWidth(opcodeWidth), .regWidth(regWidth), .immWidth(DSImmWidth), .instructionWidth(instructionWidth))
 	dSFormatDecoder(
@@ -113,6 +124,9 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	.reg1_o(DSReg1), .reg2_o(DSReg2),
 	.reg2ValOrZero_o(DSReg2ValOrZero),
 	.imm_o(DSImm),
+	//functional unit code
+	.functionalUnitCode_o(DSfunctionalUnitCode),
+	//enable
 	.enable_o(DSEnable)
 	);
 	
@@ -121,6 +135,7 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	wire XReg2ValOrZero;
 	wire XBit1;
 	wire XEnable;
+	wire [0:1] XfunctionalUnitCode;
 	//X format instruction decoder
 	XFormatDecoder #(.opcodeWidth(opcodeWidth), .xOpCodeWidth(xOpCodeWidth), .regWidth(regWidth), .instructionWidth(instructionWidth))
 	xFormatDecoder(
@@ -136,6 +151,9 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	.reg1_o(XReg1), .reg2_o(XReg2), .reg3_o(XReg3),
 	.reg2ValOrZero_o(XReg2ValOrZero),
 	.bit1_o(XBit1),
+	//functional unit code
+	.functionalUnitCode_o(XfunctionalUnitCode),
+	//enable
 	.enable_o(XEnable)
 	);	
 	
@@ -143,6 +161,7 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	wire [0:5] MDImm;
 	wire MDBit1, MDBit2;
 	wire MDEnable;
+	wire [0:1] MDfunctionalUnitCode;
 	MDFormatDecoder #(.opcodeWidth(opcodeWidth), .regWidth(regWidth), .immWidth(6), .instructionWidth(instructionWidth))
 	mDFormatDecoder(
 	.clock_i(clock_i),
@@ -155,6 +174,9 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	.reg1_o(MDReg1), .reg2_o(MDReg2), .reg3_o(MDReg3),//reg 3 is implicitley an immediate value
 	.imm_o(MDImm),
 	.bit1_o(MDBit1), .bit2_o(MDBit2),
+	//functional unit code
+	.functionalUnitCode_o(MDfunctionalUnitCode),
+	//enable
 	.enable_o(MDEnable)
 	);	
 	
@@ -163,6 +185,7 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	wire [0:regWidth-1] XOReg1, XOReg2, XOReg3;
 	wire XOBit1, XOBit2;
 	wire XOEnable;
+	wire [0:1] XOfunctionalUnitCode;
 	XOFormatDecoder #( .opcodeWidth(opcodeWidth), .xOpCodeWidth(10), .regWidth(regWidth), .instructionWidth(instructionWidth))
 	xOFormatDecoder(
 	//command
@@ -176,6 +199,9 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	.reg1_o(XOReg1), .reg2_o(XOReg2), .reg3_o(XOReg3),
 	.xOpCode_o(XOopCode),
 	.bit1_o(XOBit1), .bit2_o(XOBit2),
+	//functional unit code
+	.functionalUnitCode_o(XOfunctionalUnitCode),
+	//enable
 	.enable_o(XOEnable)
 	);
 
@@ -198,34 +224,40 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	.dImm_i(DImm),
 	.dImmFormat_i(DImmFormat),
 	.dReg2ValOrZero_i(DReg2ValOrZero),
+	.dfunctionalUnitCode_i(DfunctionalUnitCode),
 	.dImmShiftUpBytes_i(DFshiftImmUpBytes),
 	//DQ input
 	.dQEnable_i(DQEnable),
 	.dQReg1_i(DQReg1), .dQReg2_i(DQReg2),
 	.dQImm_i(DQImm),
+	.dQfunctionalUnitCode_i(DQfunctionalUnitCode),
 	.dQBit_i(DQBit1),
 	//DS input
 	.dSEnable_i(DSEnable),
 	.dSReg1_i(DSReg1), .dSReg2_i(DSReg2),
 	.dSImm_i(DSImm),
+	.dSfunctionalUnitCode_i(DSfunctionalUnitCode),
 	.dSReg2ValOrZero_i(DSReg2ValOrZero),
 	//X input
 	.xEnable_i(XEnable),
 	.xReg1_i(XReg1), .xReg2_i(XReg2), .xReg3_i(XReg3),
 	.xBit1_i(XBit1),
 	.xReg2ValOrZero_i(XReg2ValOrZero),
+	.xfunctionalUnitCode_i(XfunctionalUnitCode),
 	.xXopcode_i(xOpcode),
 	//MD input
 	.mDEnable_i(MDEnable),
 	.mDReg1_i(MDReg1), .mDReg2_i(MDReg2), .mDReg3_i(MDReg3),
 	.mDImm_i(MDImm),
+	.mDfunctionalUnitCode_i(mDfunctionalUnitCode),
 	.mDBit1_i(MDBit1), .mDBit2_i(MDBit2),
 	//XO input
 	.xOEnable_i(XOEnable),
 	.xOReg1_i(XOReg1), .xOReg2_i(XOReg2), .xOReg3_i(XOReg3),
 	.xOopcode_i(XOopCode),
-	.xOit1_i(XOBit1), .xOBit2_i(XOBit2),	
-	//outputs 
+	.XOfunctionalUnitCode_i(XOfunctionalUnitCode),
+	.xOit1_i(XOBit1), .xOBit2_i(XOBit2),
+	//outputs
 	.enable_o(enable_o),
 	.imm_o(imm_o),
 	.immEnable_o(immEnable_i),
@@ -239,6 +271,7 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	.opcode_o(opCode_o),
 	.xOpcode_o(xOpcode_o),
 	.xOpcodeEnable_o(xOpCodeEnabled_o),
+	.functionalUnitCode_o(functionalUnitCode_o),
 	.instructionFormat_o(instructionFormat_o)
     );
 

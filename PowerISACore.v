@@ -105,6 +105,7 @@ module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, 
 	wire [0:opcodeWidth-1] decodeOpCode;
 	wire [0:xOpCodeWidth-1] decodeXOpcode;
 	wire decodeXOpCodeEnabled;
+	wire [0:1] decodeFunctionalUnitCode;
 	wire [0:formatIndexRange-1] decodeInstructionFormat;
 	DecodeUnit #(
 	.instructionWidth(instructionSize), .addressSize(addressSize), .formatIndexRange(formatIndexRange),
@@ -134,6 +135,7 @@ module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, 
 	.opCode_o(decodeOpCode),
 	.xOpcode_o(decodeXOpcode),
 	.xOpCodeEnabled_o(decodeXOpCodeEnabled),
+	.functionalUnitCode_o(decodeFunctionalUnitCode),
 	.instructionFormat_o(decodeInstructionFormat)
 	);
 	
@@ -157,6 +159,7 @@ module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, 
     .opCode_i(decodeOpCode), 
     .xOpcode_i(decodeXOpcode), 
     .xOpCodeEnabled_i(decodeXOpCodeEnabled), 
+	 .functionalUnitCode_i(decodeFunctionalUnitCode),
     .instructionFormat_i(decodeInstructionFormat), 
 	 //reg write in
     .reg1WritebackData_i(reg1WritebackData_i), 
@@ -171,17 +174,20 @@ module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, 
     .operand3_o(operand3_o), 
     .bit1_o(bit1_o), 
     .bit2_o(bit2_o), 
-    .operand1Enable_o(operand1Enable_o), 
-    .operand2Enable_o(operand2Enable_o), 
-    .operand3Enable_o(operand3Enable_o), 
-    .bit1Enable_o(bit1Enable_o), 
-    .bit2Enable_o(bit2Enable_o), 
-    .instructionAddress_o(instructionAddress_o), 
-    .opCode_o(opCode_o), 
-    .xOpCode_o(xOpCode_o), 
-    .xOpCodeEnabled_o(xOpCodeEnabled_o), 
+    .operand1Enable_o(operand1Enable_o),
+    .operand2Enable_o(operand2Enable_o),
+    .operand3Enable_o(operand3Enable_o),
+    .bit1Enable_o(bit1Enable_o),
+    .bit2Enable_o(bit2Enable_o),
+    .instructionAddress_o(instructionAddress_o),
+    .opCode_o(opCode_o),
+    .xOpCode_o(xOpCode_o),
+    .xOpCodeEnabled_o(xOpCodeEnabled_o),
     .instructionFormat_o(instructionFormat_o)
     );
+	 
+	 
+	 //functional unit
 
 	//stall unit
 	StallUnit stallUnit(

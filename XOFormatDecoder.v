@@ -15,6 +15,7 @@ module XOFormatDecoder#( parameter opcodeWidth = 6, parameter xOpCodeWidth = 9, 
 	output reg [0:regWidth-1] reg1_o, reg2_o, reg3_o,
 	output reg [0:xOpCodeWidth-1]xOpCode_o,
 	output reg bit1_o, bit2_o,
+	output reg [0:1] functionalUnitCode_o,
 	output reg enable_o
 	);
 

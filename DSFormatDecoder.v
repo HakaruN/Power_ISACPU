@@ -16,6 +16,7 @@ module DSFormatDecoder#(parameter opcodeWidth = 6, parameter regWidth = 5, param
 	output reg [0:regWidth-1] reg1_o, reg2_o,
 	output reg reg2ValOrZero_o,//indicates that if the register addr is zero, a zero litteral is to be used not reg zero
 	output reg [0:immWidth-1] imm_o,	
+	output reg [0:1] functionalUnitCode_o,
 	output reg enable_o
 	);
 	
