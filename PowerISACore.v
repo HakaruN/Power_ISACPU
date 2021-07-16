@@ -3,7 +3,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, parameter iMemoryAddressSize = 16, parameter instructionSize = 32,
 	parameter iCacheOffsetSize = 5, iCacheIndexSize = 8, iCacheTagSize = addressSize - (iCacheOffsetSize + iCacheIndexSize), parameter blockSize = 256,	
-	parameter formatIndexRange = 5, parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5
+	parameter formatIndexRange = 5, parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, parameter immWidth = 16
 	)(
 	//command
 	input wire clock_i,
@@ -138,7 +138,23 @@ module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, 
 	.functionalUnitCode_o(decodeFunctionalUnitCode),
 	.instructionFormat_o(decodeInstructionFormat)
 	);
-	
+
+
+	//reg read output - exec unit input
+	wire RegOutEnable;
+	wire [0:63] RegOutOperand1, RegOutOperand2, RegOutOperand3;
+	wire [0:regWidth-1] RegOutReg1Address, RegOutReg2Address, RegOutReg3Address;
+	wire [0:immWith-1] RegOutImm;
+	wire RegOutImmEnable;
+	wire RegOutBit1, RegOutBit2;
+	wire RegOutOperand1Enable, RegOutOperand2Enable, RegOutOperand3Enable, RegOutBit1Enable, RegOutBit2Enable;
+	wire RegOutOperand1Writeback, RegOutOperand2Writeback, RegOutOperand3Writeback;
+	wire [0:63] RegOutInstructionAddress;
+	wire [0:opcodeWidth-1] RegOutOpCode;
+	wire [0:xOpCodeWidth-1] RegOutXOpCode;
+	wire RegOutXOpCodeEnabled;
+	wire [0:1] RegOutFunctionalUnitCode;
+	wire [0:formatIndexRange-1] RegOutInstructionFormat;
 
 	//Register unit
 	RegisterUnit registerUnit (
@@ -167,36 +183,40 @@ module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, 
     .reg1isWriteback_i(reg1isWriteback_i), 
     .reg2isWriteback_i(reg2isWriteback_i), 
     .stall_o(stall_o), 
-    .enable_o(enable_o), 
+    .enable_o(enable_o),	 
 	 //reg read out
-    .operand1_o(operand1_o), 
-    .operand2_o(operand2_o), 
-    .operand3_o(operand3_o), 
-    .bit1_o(bit1_o), 
-    .bit2_o(bit2_o), 
-    .operand1Enable_o(operand1Enable_o),
-    .operand2Enable_o(operand2Enable_o),
-    .operand3Enable_o(operand3Enable_o),
-    .bit1Enable_o(bit1Enable_o),
-    .bit2Enable_o(bit2Enable_o),
-    .instructionAddress_o(instructionAddress_o),
-    .opCode_o(opCode_o),
-    .xOpCode_o(xOpCode_o),
-    .xOpCodeEnabled_o(xOpCodeEnabled_o),
-    .instructionFormat_o(instructionFormat_o)
+	 .enable_o(RegOutEnable),
+    .operand1_o(RegOutOperand1), .operand2_o(RegOutOperand2), .operand3_o(RegOutOperand3), 
+	 .reg1Address_o(RegOutReg1Address), .reg2Address_o(RegOutReg2Address), .reg3Address_o(RegOutReg3Address),
+	 .imm_o(RegOutImm), .immEnable_o(RegOutImmEnable),
+    .bit1_o(RegOutBit1), .bit2_o(RegOutBit2), 
+    .operand1Enable_o(RegOutOperand1Enable), .operand2Enable_o(RegOutOperand2Enable), .operand3Enable_o(RegOutOperand3Enable),
+    .bit1Enable_o(RegOutBit1Enable), .bit2Enable_o(RegOutBit2Enable),
+    .instructionAddress_o(RegOutInstructionAddress),
+    .opCode_o(RegOutOpCode),
+    .xOpCode_o(RegOutXOpCode),
+    .xOpCodeEnabled_o(RegOutXOpCodeEnabled),
+	 .functionalUnitCode_o(RegOutFunctionalUnitCode),
+    .instructionFormat_o(RegOutInstructionFormat)
     );
-	 
-	 
-	 //functional unit
+	
+	
+	//exec units
+	Execution #(
+	.FXUnitCode(FXUnitCode), .FPUnitCode(FPUnitCode), .LdStUnitCode(LdStUnitCode), .BranchUnitCode(BranchUnitCode), .TrapUnitCode(TrapUnitCode))
+	executionUnits(
+	);
 
 	//stall unit
 	StallUnit stallUnit(
 		//stall inputs
 		.l1iCacheMissStall_i(isCacheMiss),
-		.regFileStall_i(),
+		.regFileStall_i(),//TODO: Implement a reg unit stall line
 		//stall outputs
 		.fetchFullStall_o(stallFullUnit),
 		.fetchTagQueryStall_o(stallTagQuery)
 	);
+	
+	//TODO implement exception unit
 
 endmodule
