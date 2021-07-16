@@ -31,14 +31,17 @@ begin
 			2: begin $display("Load Word Algebraic");				
 				reg2ValOrZero_o <= 1;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			0: begin $display("Load Doubleword");
 				reg2ValOrZero_o <= 1;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			1: begin $display("Load Doubleword with Update");
 				reg2ValOrZero_o <= 0;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			default begin $display("Invalid or unsupported instruction"); enable_o <= 0; end
 		endcase
@@ -51,16 +54,19 @@ begin
 			0: begin $display("Store Doubleword");
 				reg2ValOrZero_o <= 1;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			2: begin $display("Store Quadword");
 				reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15];
 				reg2ValOrZero_o <= 1;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			1: begin $display("Store Doubleword with Update");
 				reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15];
 				reg2ValOrZero_o <= 0;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			default begin $display("Invalid or unsupported instruction"); enable_o <= 0;  stall_o <= 0; end
 		endcase

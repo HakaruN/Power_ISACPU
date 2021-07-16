@@ -4,7 +4,9 @@
 //Supports all D format instructions in the POWER 3.0B ISA
 //////////////////////////////////////////////////////////////////////////////////
 module DFormatDecoder#(parameter opcodeWidth = 6, parameter regWidth = 5, parameter immWidth = 16, parameter instructionWidth = 32,
-parameter signedImm = 1, parameter unsignedImm = 0, parameter regImm = 0, parameter regRead = 1, parameter regWrite = 2, parameter regReadWrite = 3)(
+parameter signedImm = 1, parameter unsignedImm = 0, parameter regImm = 0, parameter regRead = 1, parameter regWrite = 2, parameter regReadWrite = 3,
+parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, parameter BranchUnitCode = 3, parameter TrapUnitCode = 4//functional unit code/ID used for dispatch
+)(
 	//command in
 	input wire clock_i,
 	input wire enable_i,
@@ -19,7 +21,7 @@ parameter signedImm = 1, parameter unsignedImm = 0, parameter regImm = 0, parame
 	output reg [0:immWidth-1] imm_o,
 	output reg immFormat_o,//0 = unsignedImm, 1 = signedImm (sign extended to 64b down the pipe)
 	output reg [0:1]shiftImmUpBytes_o,//EG shiftImmUpBytes_o == 2, the extended immediate will be { 32'h0000_0000, immFormat_o, 16'h0000}, if shiftImmUpBytes_o == 4: {immFormat_o, 48'h0000_0000_0000}
-	output reg [0:1] functionalUnitCode_o,
+	output reg [0:2] functionalUnitCode_o,
 	output reg enable_o
 	);
 
@@ -35,188 +37,225 @@ begin
 				reg2ValOrZero_o <= 1; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;	
 				reg1Use_o <= regWrite; reg2Use_o <= regRead;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			35: begin $display("Load Byte and Zero with Update");
 				reg2ValOrZero_o <= 0; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regReadWrite;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			40: begin $display("Load Halfword and Zero");
 				reg2ValOrZero_o <= 1; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;		
 				reg1Use_o <= regWrite; reg2Use_o <= regRead;				
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			41: begin $display("Load Halfword and Zero with Update");
 				reg2ValOrZero_o <= 0; immFormat_o <= signedImm;  shiftImmUpBytes_o <= 0;		
 				reg1Use_o <= regWrite; reg2Use_o <= regReadWrite;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			42: begin $display("Load Halfword Algebraic");
 				reg2ValOrZero_o <= 1; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regRead;	
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			43: begin $display("Load Halfword Algebraic with Update");
 				reg2ValOrZero_o <= 0; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regReadWrite;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			32: begin $display("Load Word and Zero");
 				reg2ValOrZero_o <= 1; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regRead;	
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			33: begin $display("Load Word and Zero with Update");
 				reg2ValOrZero_o <= 0; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regReadWrite;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			38: begin $display("Store Byte");
 				reg2ValOrZero_o <= 1; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regRead;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			39: begin $display("Store Byte with Update");
 				reg2ValOrZero_o <= 0; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regReadWrite;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			44: begin $display("Store Halfword");
 				reg2ValOrZero_o <= 1; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regRead;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			45: begin $display("Store Halfword with Update");
 				reg2ValOrZero_o <= 0; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regReadWrite;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			36: begin $display("Store Word");
 				reg2ValOrZero_o <= 1; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regRead;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			37: begin $display("Store Word with Update");
 				reg2ValOrZero_o <= 0; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regReadWrite;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			46: begin $display("Load Multiple Word");
 				reg2ValOrZero_o <= 1; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regRead; reg2Use_o <= regRead;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			47: begin $display("Store Multiple Word");
 				reg2ValOrZero_o <= 1; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regRead; reg2Use_o <= regRead;
 				///CANT BE USED IN le MODE! system align-ment error handler is invoked
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			14: begin $display("Add Immediate");
 				reg2ValOrZero_o <= 1; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regRead;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= FXUnitCode;
 			end
 			15: begin $display("Add Immediate Shifted");
 				reg2ValOrZero_o <= 1; imm_o <= instruction_i[16:31]; immFormat_o <= signedImm; shiftImmUpBytes_o <= 2;
 				reg1Use_o <= regWrite; reg2Use_o <= regRead;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= FXUnitCode;
 			end
 			12: begin $display("Add Immediate Carrying");
 				reg2ValOrZero_o <= 0; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regRead;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= FXUnitCode;
 			end
 			13: begin $display("Add Immediate Carrying and Record");
 				reg2ValOrZero_o <= 0; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regRead;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= FXUnitCode;
 			end
 			8: begin $display("Subtract From Immediate Carrying");
 				reg2ValOrZero_o <= 0; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regRead;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= FXUnitCode;
 			end
 			7: begin $display("Multiply Low Immediate");
 				reg2ValOrZero_o <= 0; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regRead;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= FXUnitCode;
 			end
 			11: begin $display("Compare Immediate");
 				reg2ValOrZero_o <= 0; immFormat_o <= signedImm; shiftImmUpBytes_o <= 2;
 				reg1Use_o <= regImm; reg2Use_o <= regRead;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= FXUnitCode;
 			end
 			10: begin $display("Compare Logical Immediate");
 				reg2ValOrZero_o <= 0; immFormat_o <= unsignedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regImm; reg2Use_o <= regRead;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= FXUnitCode;
 			end
 			3: begin $display("Trap Word Immediate");
 				reg2ValOrZero_o <= 0; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regImm; reg2Use_o <= regRead;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= TrapUnitCode;
 			end
 			2: begin $display("Trap Doubleword Immediate");
 				reg2ValOrZero_o <= 0; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regImm; reg2Use_o <= regRead;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= TrapUnitCode;
 			end
 			28: begin $display("AND Immediate");
 				reg2ValOrZero_o <= 0; immFormat_o <= unsignedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regRead; reg2Use_o <= regWrite;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= FXUnitCode;
 			end
 			29: begin $display("OR Immediate");
 				reg2ValOrZero_o <= 0; immFormat_o <= unsignedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regRead; reg2Use_o <= regWrite;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= FXUnitCode;
 			end
 			24: begin $display("AND Immediate Shifted");
 				reg2ValOrZero_o <= 0; immFormat_o <= unsignedImm; shiftImmUpBytes_o <= 2;
 				reg1Use_o <= regRead; reg2Use_o <= regWrite;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= FXUnitCode;
 			end
 			25: begin $display("OR Immediate Shifted");
 				reg2ValOrZero_o <= 0; immFormat_o <= unsignedImm; shiftImmUpBytes_o <= 2;
 				reg1Use_o <= regRead; reg2Use_o <= regWrite;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= FXUnitCode;
 			end
 			26: begin $display("XOR Immediat");
 				reg2ValOrZero_o <= 0; immFormat_o <= unsignedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regRead; reg2Use_o <= regWrite;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= FXUnitCode;
 			end
 			27: begin $display("XOR Immediate Shifted");
 				reg2ValOrZero_o <= 0; immFormat_o <= unsignedImm; shiftImmUpBytes_o <= 2;
 				reg1Use_o <= regRead; reg2Use_o <= regWrite;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= FXUnitCode;
 			end
 		//floating point D format instructions
 			48: begin $display("Load Floating-Point Single");
 				reg2ValOrZero_o <= 1; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regRead;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= FPUnitCode;
 			end
 			49: begin $display("Load Floating-Point Single with Update");
 				reg2ValOrZero_o <= 0; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regReadWrite;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= FPUnitCode;
 			end
 			50: begin $display("Load Floating-Point Double");
 				reg2ValOrZero_o <= 1; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regRead;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			51: begin $display("Load Floating-Point Double with Update");
 				reg2ValOrZero_o <= 0; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				reg1Use_o <= regWrite; reg2Use_o <= regReadWrite;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			
 			52	: begin $display("Load Floating-Point Single");
 				reg2ValOrZero_o <= 1; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			53: begin $display("Store Floating-Point Single with Update");
 				reg2ValOrZero_o <= 0; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
@@ -225,10 +264,12 @@ begin
 			54: begin $display("Store Floating-Point Double");
 				reg2ValOrZero_o <= 1; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			55: begin $display("Store Floating-Point Double with Update");
 				reg2ValOrZero_o <= 0; immFormat_o <= signedImm; shiftImmUpBytes_o <= 0;
 				enable_o <= 1; stall_o <= 0;
+				functionalUnitCode_o <= LdStUnitCode;
 			end
 			default: begin
 				enable_o <= 0;
@@ -236,6 +277,7 @@ begin
 				immFormat_o <= 0;
 				shiftImmUpBytes_o <= 0;			
 				stall_o <= 0;
+				functionalUnitCode_o <= 0;
 			end
 		endcase
 	end

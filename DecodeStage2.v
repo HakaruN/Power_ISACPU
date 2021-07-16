@@ -21,38 +21,38 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 	input wire [0:DImmWidth-1] dImm_i,
 	input wire dImmFormat_i,
 	input wire dReg2ValOrZero_i,
-	input wire dfunctionalUnitCode_i,
+	input wire [0:2] dfunctionalUnitCode_i,
 	input wire [0:1] dImmShiftUpBytes_i,
 	//DQ input
 	input wire dQEnable_i,
 	input wire [0:regWidth-1] dQReg1_i, dQReg2_i,
 	input wire [0:DQimmWidth-1] dQImm_i,
-	input wire dQfunctionalUnitCode_i,
+	input wire [0:2] dQfunctionalUnitCode_i,
 	input wire dQBit_i,
 	//DS input
 	input wire dSEnable_i,
 	input wire [0:regWidth-1] dSReg1_i, dSReg2_i,
 	input wire [0:DSimmWidth-1] dSImm_i,
-	input wire dSfunctionalUnitCode_i,
+	input wire [0:2] dSfunctionalUnitCode_i,
 	input wire dSReg2ValOrZero_i,
 	//X input
 	input wire xEnable_i,
 	input wire [0:regWidth-1] xReg1_i, xReg2_i, xReg3_i,
 	input wire xBit1_i,
 	input wire xReg2ValOrZero_i,
-	input wire xfunctionalUnitCode_i,
+	input wire [0:2] xfunctionalUnitCode_i,
 	input wire [0:XxoOpcodeWidth-1] xXopcode_i,
 	//MD input
 	input wire mDEnable_i,
 	input wire [0:regWidth-1] mDReg1_i, mDReg2_i, mDReg3_i,
 	input wire [0:MDimmWidth-1] mDImm_i,
-	input wire mDfunctionalUnitCode_i,
+	input wire [0:2] mDfunctionalUnitCode_i,
 	input wire mDBit1_i, mDBit2_i,
 	//XO input
 	input wire xOEnable_i,
 	input wire [0:regWidth-1] xOReg1_i, xOReg2_i, xOReg3_i,
 	input wire [0:XoOpCodeWidth-1] xOopcode_i,
-	input wire xOfunctionalUnitCode_i,
+	input wire [0:2] xOfunctionalUnitCode_i,
 	input wire xOit1_i, xOBit2_i,	
 	//outputs 
 	output reg enable_o,
@@ -68,7 +68,7 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 	output reg [0:opcodeWidth-1]opcode_o,
 	output reg [0:XxoOpcodeWidth-1]xOpcode_o,
 	output reg xOpcodeEnable_o,
-	output reg [0:1] functionalUnitCode_o,
+	output reg [0:2] functionalUnitCode_o,
 	output reg instructionFormat_o
     );
 

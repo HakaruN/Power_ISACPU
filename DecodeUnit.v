@@ -6,6 +6,7 @@
 //Each decoder has unique ouptputs that is specific to the decoder's format.
 //Stage two takes in the decoders outputs, applies implicit operations based on the format (sign extention, bit concatinations etc) and multiplexes the output
 //to the next pipeline stage
+//TODO: Implement a trap handler
 //////////////////////////////////////////////////////////////////////////////////
 module DecodeUnit#( parameter instructionWidth = 32, parameter addressSize = 64, parameter formatIndexRange = 5,
 parameter A = 1, parameter B = 2, parameter D = 3, parameter DQ = 4, parameter DS = 5, parameter DX = 6, parameter I = 7, parameter M = 8,
@@ -15,7 +16,8 @@ parameter Z23 = 25, parameter INVALID = 0,
 parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter XoOpcodeWidth = 9, parameter regWidth = 5, parameter immWidth = 16,
 parameter DSImmWidth = 14, parameter DImmWith = 16, parameter DQImmWidth = 12, parameter MDImmWidth = 6,
 parameter regImm = 0, parameter regRead = 1, parameter regWrite = 2, parameter regReadWrite = 3,//indicates if a registers use is immediate, read, write or both
-parameter numStallLines = 6//should be the number of format specific decoders in the decode unit
+parameter numStallLines = 6,//should be the number of format specific decoders in the decode unit
+parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, parameter BranchUnitCode = 3, parameter TrapUnitCode = 4//functional unit code/ID used for dispatch
 )(
 	//command int
 	input wire clock_i,
@@ -40,7 +42,7 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	output wire [0:opcodeWidth-1] opCode_o,
 	output wire [0:xOpCodeWidth-1] xOpcode_o,
 	output wire xOpCodeEnabled_o,
-	output wire [0:1] functionalUnitCode_o,
+	output wire [0:2] functionalUnitCode_o,
 	output wire [0:formatIndexRange-1] instructionFormat_o
 	);
 	
@@ -55,9 +57,10 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	wire DImmFormat;//0 = unsignedImm, 1 = signedImm (sign extended to 64b down the pipe)
 	wire [0:1] DFshiftImmUpBytes;//EG shiftImmUpBytes_o == 2, the extended immediate will be { 32'h0000_0000, immFormat_o, 16'h0000}, if shiftImmUpBytes_o == 4: {immFormat_o, 48'h0000_0000_0000}
 	wire DEnable;	
-	wire [0:1] DfunctionalUnitCode;
+	wire [0:2] DfunctionalUnitCode;
 	//D format instruction decoder
-	DFormatDecoder #(.opcodeWidth(opcodeWidth), .regWidth(regWidth), .immWidth(DImmWith), .instructionWidth(instructionWidth))
+	DFormatDecoder #(.opcodeWidth(opcodeWidth), .regWidth(regWidth), .immWidth(DImmWith), .instructionWidth(instructionWidth),
+	.FXUnitCode(FXUnitCode), .FPUnitCode(FPUnitCode), .LdStUnitCode(LdStUnitCode), .BranchUnitCode(BranchUnitCode))
 	dFormatDecoder(
 	//command
 	.clock_i(clock_i),
@@ -82,7 +85,7 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	wire [0:11] DQImm;
 	wire DQBit1;
 	wire DQEnable;
-	wire [0:1] DQfunctionalUnitCode;
+	wire [0:2] DQfunctionalUnitCode;
 		
 	//DQ format instruction decoder
 	//All dq instructions are implicitly reg2ValOrZero=1 and imm shift up 4 bits
@@ -109,7 +112,7 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	wire DSReg2ValOrZero;
 	wire [0:DSImmWidth-1] DSImm;//Imm is implicitly extended to 16 bits by adding 2 zeroes on the right size
 	wire DSEnable;
-	wire [0:1] DSfunctionalUnitCode;
+	wire [0:2] DSfunctionalUnitCode;
 	//DS format instruction decoder
 	DSFormatDecoder #(.opcodeWidth(opcodeWidth), .regWidth(regWidth), .immWidth(DSImmWidth), .instructionWidth(instructionWidth))
 	dSFormatDecoder(
@@ -135,7 +138,7 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	wire XReg2ValOrZero;
 	wire XBit1;
 	wire XEnable;
-	wire [0:1] XfunctionalUnitCode;
+	wire [0:2] XfunctionalUnitCode;
 	//X format instruction decoder
 	XFormatDecoder #(.opcodeWidth(opcodeWidth), .xOpCodeWidth(xOpCodeWidth), .regWidth(regWidth), .instructionWidth(instructionWidth))
 	xFormatDecoder(
@@ -161,7 +164,7 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	wire [0:5] MDImm;
 	wire MDBit1, MDBit2;
 	wire MDEnable;
-	wire [0:1] MDfunctionalUnitCode;
+	wire [0:2] MDfunctionalUnitCode;
 	MDFormatDecoder #(.opcodeWidth(opcodeWidth), .regWidth(regWidth), .immWidth(6), .instructionWidth(instructionWidth))
 	mDFormatDecoder(
 	.clock_i(clock_i),
@@ -185,7 +188,7 @@ parameter numStallLines = 6//should be the number of format specific decoders in
 	wire [0:regWidth-1] XOReg1, XOReg2, XOReg3;
 	wire XOBit1, XOBit2;
 	wire XOEnable;
-	wire [0:1] XOfunctionalUnitCode;
+	wire [0:2] XOfunctionalUnitCode;
 	XOFormatDecoder #( .opcodeWidth(opcodeWidth), .xOpCodeWidth(10), .regWidth(regWidth), .instructionWidth(instructionWidth))
 	xOFormatDecoder(
 	//command

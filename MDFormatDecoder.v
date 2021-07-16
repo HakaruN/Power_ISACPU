@@ -2,7 +2,8 @@
 //////////////////////////////////////////////////////////////////////////////////
 //Implements all MD and MDS format instructions in the PowerISA 3.0B
 //////////////////////////////////////////////////////////////////////////////////
-module MDFormatDecoder#(parameter opcodeWidth = 6, parameter regWidth = 5, parameter immWidth = 6, parameter instructionWidth = 32
+module MDFormatDecoder#(parameter opcodeWidth = 6, parameter regWidth = 5, parameter immWidth = 6, parameter instructionWidth = 32,
+parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, parameter BranchUnitCode = 3, parameter TrapUnitCode = 4//functional unit code/ID used for dispatch
 )(
 	//command in
 	input wire clock_i,
@@ -31,25 +32,31 @@ begin
 			case(instruction_i[27:29])//check for MD format
 				0: begin $display("Rotate Left Doubleword Immediate then Clear Left");				
 					enable_o <= 1; stall_o <= 0;
+					functionalUnitCode_o <= FXUnitCode;
 				end
 				1: begin $display("Rotate Left Doubleword Immediate then Clear Right");
 					enable_o <= 1; stall_o <= 0;
+					functionalUnitCode_o <= FXUnitCode;
 				end
 				2: begin $display("Rotate Left Doubleword Immediate then Clear");
 					enable_o <= 1; stall_o <= 0;
+					functionalUnitCode_o <= FXUnitCode;
 				end
 				3: begin $display("Rotate Left Doubleword Immediate then Mask Insert");
 					enable_o <= 1; stall_o <= 0;
+					functionalUnitCode_o <= FXUnitCode;
 				end
 				default : enable_o <= 0;
 			endcase
-			//DONT USE DEFAULT IN ANY CASE/SWITCH BELOW (either that or only use a default in the last case statement)
+			//DONT USE DEFAULT IN ANY CASE/SWITCH BELOW (either that or only use a default in the last case statement and none above)
 			case(instruction_i[27:30])//check for MDS format
 				8: begin $display("Rotate Left Doubleword then Clear Left");
 					enable_o <= 1; stall_o <= 0;
+					functionalUnitCode_o <= FXUnitCode;
 				end
 				9: begin $display("Rotate Left Doubleword then Clear Right");
 					enable_o <= 1; stall_o <= 0;
+					functionalUnitCode_o <= FXUnitCode;
 				end
 			endcase			
 		end
