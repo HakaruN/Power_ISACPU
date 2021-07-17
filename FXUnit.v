@@ -1,6 +1,11 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 //Fixed point unit
+//NOTE: By time an instruction has arived here, immediate values have already been extended and shifted
+//and all vereg2orZeroes have been resolved
+//
+//General purpose registers are found in the register file (FX, FP). Fixed function registers are to be kept as part of the relevent execution unit
+//as these likely require a zero cycle writeback latency. The exception is when the register is shared between units (condition register)
 //////////////////////////////////////////////////////////////////////////////////
 module FXUnit #(
 parameter A = 1, parameter B = 2, parameter D = 3, parameter DQ = 4, parameter DS = 5, parameter DX = 6, parameter I = 7, parameter M = 8,
@@ -27,10 +32,20 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire [0:xOpCodeWidth-1] xOpCode_i,
 	input wire xOpCodeEnabled_i,
 	input wire [0:formatIndexRange-1] instructionFormat_i
+	);
 	
-);
+	reg [0:63] FXExceptionRegister;//as this is the 64 bit exception register for the fx unit (page 45)
+	//[0:31] reserved
+	//[32] summary overflow (SO)
+	//[33] overflow (OV)
+	//[34] carry (CA)
+	//[35:43] reserved
+	//[44] overflow32 (OV32)
+	//[45] carry32 (CA32)
+	//[46:56] reserved
+	//[57:63] This field specifies the number of bytes to be transferred by a load string index or store string indexed instruction	
 
-	reg [0:63] regWritebackVal;
+	reg [0:64] regWritebackVal;
 	reg [0:5] regWritebackAddress;
 	always @(posedge clock_i)
 	begin
@@ -39,10 +54,10 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 			if(instructionFormat_i == D)
 			begin
 				case(opCode_i)
-					14: begin regWritebackVal <= $signed(operand2_i + $signed(imm_i)); regWritebackAddress <= reg1Address_i; end//Add Immediate - 16b signed add
-					15: begin end//Add Immediate Shifted
-					12: begin end//Add Immediate Carrying
-					13: begin end//Add Immediate Carrying and Record
+					14: begin regWritebackVal <= $signed(operand2_i + imm_i); regWritebackAddress <= reg1Address_i; end//Add Immediate - 16b signed add
+					15: begin regWritebackVal <= $signed(operand2_i + imm_i); regWritebackAddress <= reg1Address_i; end//Add Immediate Shifted
+					12: begin regWritebackVal <= $signed(operand2_i + imm_i); regWritebackAddress <= reg1Address_i; end//Add Immediate Carrying
+					13: begin regWritebackVal <= $signed(operand2_i + imm_i); regWritebackAddress <= reg1Address_i; end//Add Immediate Carrying and Record
 					8: begin end//Subtract From Immediate Carrying
 					7: begin end//Multiply Low Immediate
 					11: begin end//Compare Immediate

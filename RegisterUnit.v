@@ -50,20 +50,33 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 	output reg [0:formatIndexRange-1] instructionFormat_o
 	);
 	integer i;
+	
+	
+	reg [32:63] conditionRegister;//CR divided into 8 4-bit blocks/fields
+	//bits:
+	//[0] = negative result bit
+	//[1] = positive result bit
+	//[2] = zero result bit
+	//[3] = summary overflow bit
+	
+	
+	//TODO: Make seperate writeback tables and reg files for FX and FP units
 	//an entry for each register, if a register is pendint writeback it's entry is set to 1. If an entry is set to 1 it cannot be read and must be stalled
-	reg isRegPendingWriteback [0:31];
+	reg FXPendingWritebackTab [0:31];
 	//reg file
-	reg [0:63] regFile [0:numRegs-1];
+	reg [0:63] FXRegFile [0:numRegs-1];
+	
 	
 	always @(posedge clock_i)//negedge of clock reads
 	begin
 		if(reset_i == 1)
 		begin
 			stall_o <= 0;
+			conditionRegister <= 0;
 			for(i = 0; i < numRegs; i = i + 1)//reset all registers to not pending a writeback
 			begin
-				isRegPendingWriteback[i] <= 0;
-				regFile[i] <= 0;
+				FXPendingWritebackTab[i] <= 0;
+				FXRegFile[i] <= 0;
 			end
 			$display("Resetting reg file");
 		end
@@ -72,11 +85,11 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 		begin
 			$display("Reg read");
 			$display("Reading reg's %d, %d, %d", reg1_i, reg2_i, reg3_i);
-			$display("isPending writeback: %d, %d, %d", isRegPendingWriteback[reg1_i], isRegPendingWriteback[reg2_i], isRegPendingWriteback[reg3_i]);
+			$display("isPending writeback: %d, %d, %d", FXPendingWritebackTab[reg1_i], FXPendingWritebackTab[reg2_i], FXPendingWritebackTab[reg3_i]);
 			$display("reg's use: %d, %d, %d (regImm = 0, regRead = 1, regWrite = 2, regReadWrite = 3)",reg1Use_i, reg2Use_i, reg3Use_i);
 				
 			//if any registers are pending a writeback, we must stall and can't enable the outputs until the registers are available to read from
-			if(isRegPendingWriteback[reg1_i] == 1 || isRegPendingWriteback[reg2_i] == 1 || isRegPendingWriteback[reg3_i] == 1)
+			if(FXPendingWritebackTab[reg1_i] == 1 || FXPendingWritebackTab[reg2_i] == 1 || FXPendingWritebackTab[reg3_i] == 1)
 			begin
 				enable_o <= 0;
 				stall_o <= 1;
@@ -123,9 +136,9 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 				begin
 					case(reg1Use_i)
 						0:begin operand1_o <= reg1_i; operand1Enable_o <= 1; operand1Writeback_o <= 0; end//reg = imm
-						1:begin operand1_o <= regFile[reg1_i]; operand1Enable_o <= 1; operand1Writeback_o <= 0; end//reg = read
-						2:begin operand1_o <= reg1_i; operand1Enable_o <= 1; operand1Writeback_o <= 1; reg1Address_o <= reg1_i; isRegPendingWriteback[reg1_i] <= 1; end//reg = write
-						3:begin operand1_o <= regFile[reg1_i]; operand1Enable_o <= 1; operand1Writeback_o <= 1; reg1Address_o <= reg1_i; isRegPendingWriteback[reg1_i] <= 1; end//reg = read/write
+						1:begin operand1_o <= FXRegFile[reg1_i]; operand1Enable_o <= 1; operand1Writeback_o <= 0; end//reg = read
+						2:begin operand1_o <= reg1_i; operand1Enable_o <= 1; operand1Writeback_o <= 1; reg1Address_o <= reg1_i; FXPendingWritebackTab[reg1_i] <= 1; end//reg = write
+						3:begin operand1_o <= FXRegFile[reg1_i]; operand1Enable_o <= 1; operand1Writeback_o <= 1; reg1Address_o <= reg1_i; FXPendingWritebackTab[reg1_i] <= 1; end//reg = read/write
 					endcase
 					operand1Enable_o <= 1;
 				end
@@ -147,8 +160,8 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 								case(reg2Use_i)
 									0:begin operand2_o <=0; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = imm
 									1:begin operand2_o <= 0; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = read
-									2:begin operand2_o <= 0; operand2Enable_o <= 1; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; isRegPendingWriteback[reg2_i] <= 1; end//reg = write
-									3:begin operand2_o <= 0; operand2Enable_o <= 1; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; isRegPendingWriteback[reg2_i] <= 1; end//reg = read/write
+									2:begin operand2_o <= 0; operand2Enable_o <= 1; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; FXPendingWritebackTab[reg2_i] <= 1; end//reg = write
+									3:begin operand2_o <= 0; operand2Enable_o <= 1; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; FXPendingWritebackTab[reg2_i] <= 1; end//reg = read/write
 								endcase						
 						end
 						else//reg2 val or zero == 1 and reg2 != 0
@@ -156,9 +169,9 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 							$display("Reg 2 is not zero");
 							case(reg2Use_i)
 								0:begin operand2_o <= reg2_i; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = imm
-								1:begin operand2_o <= regFile[reg2_i]; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = read
-								2:begin operand2_o <= reg2_i; operand2Enable_o <= 1; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; isRegPendingWriteback[reg2_i] <= 1; end//reg = write
-								3:begin operand2_o <= regFile[reg2_i]; operand2Enable_o <= 1; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; isRegPendingWriteback[reg2_i] <= 1; end//reg = read/write
+								1:begin operand2_o <= FXRegFile[reg2_i]; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = read
+								2:begin operand2_o <= reg2_i; operand2Enable_o <= 1; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; FXPendingWritebackTab[reg2_i] <= 1; end//reg = write
+								3:begin operand2_o <= FXRegFile[reg2_i]; operand2Enable_o <= 1; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; FXPendingWritebackTab[reg2_i] <= 1; end//reg = read/write
 							endcase						
 						end
 					end
@@ -167,9 +180,9 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 						$display("reg2ValorZero = 0");
 						case(reg2Use_i)
 							0:begin operand2_o <= reg2_i; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = imm
-							1:begin operand2_o <= regFile[reg2_i]; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = read
-							2:begin operand2_o <= reg2_i; operand2Enable_o <= 1; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; isRegPendingWriteback[reg2_i] <= 1; end//reg = write
-							3:begin operand2_o <= regFile[reg2_i]; operand2Enable_o <= 1; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; isRegPendingWriteback[reg2_i] <= 1; end//reg = read/write
+							1:begin operand2_o <= FXRegFile[reg2_i]; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = read
+							2:begin operand2_o <= reg2_i; operand2Enable_o <= 1; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; FXPendingWritebackTab[reg2_i] <= 1; end//reg = write
+							3:begin operand2_o <= FXRegFile[reg2_i]; operand2Enable_o <= 1; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; FXPendingWritebackTab[reg2_i] <= 1; end//reg = read/write
 						endcase
 					end
 					operand2Enable_o <= 1;
@@ -187,17 +200,17 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 						case(reg3Use_i)
 							0:begin operand3_o <= reg3_i; operand3Enable_o <= 1; operand3Writeback_o <= 0; end//reg = imm
 							1:begin operand3_o <= reg3_i; operand3Enable_o <= 1; operand3Writeback_o <= 0; end//reg = read
-							2:begin operand3_o <= reg3_i; operand3Enable_o <= 1; operand3Writeback_o <= 1; reg3Address_o <= reg3_i; isRegPendingWriteback[reg3_i] <= 1; end//reg = write
-							3:begin operand3_o <= reg3_i; operand3Enable_o <= 1; operand3Writeback_o <= 1; reg3Address_o <= reg3_i; isRegPendingWriteback[reg3_i] <= 1; end//reg = read/write
+							2:begin operand3_o <= reg3_i; operand3Enable_o <= 1; operand3Writeback_o <= 1; reg3Address_o <= reg3_i; FXPendingWritebackTab[reg3_i] <= 1; end//reg = write
+							3:begin operand3_o <= reg3_i; operand3Enable_o <= 1; operand3Writeback_o <= 1; reg3Address_o <= reg3_i; FXPendingWritebackTab[reg3_i] <= 1; end//reg = read/write
 						endcase
 					end
 					else
 					begin
 						case(reg3Use_i)
 							0:begin operand3_o <= reg3_i; operand3Enable_o <= 1; operand3Writeback_o <= 0; end//reg = imm
-							1:begin operand3_o <= regFile[reg3_i]; operand3Enable_o <= 1; operand3Writeback_o <= 0; end//reg = read
-							2:begin operand3_o <= reg3_i; operand3Enable_o <= 1; operand3Writeback_o <= 1; reg3Address_o <= reg3_i; isRegPendingWriteback[reg3_i] <= 1; end//reg = write
-							3:begin operand3_o <= regFile[reg3_i]; operand3Enable_o <= 1; operand3Writeback_o <= 1; reg3Address_o <= reg3_i; isRegPendingWriteback[reg3_i] <= 1; end//reg = read/write
+							1:begin operand3_o <= FXRegFile[reg3_i]; operand3Enable_o <= 1; operand3Writeback_o <= 0; end//reg = read
+							2:begin operand3_o <= reg3_i; operand3Enable_o <= 1; operand3Writeback_o <= 1; reg3Address_o <= reg3_i; FXPendingWritebackTab[reg3_i] <= 1; end//reg = write
+							3:begin operand3_o <= FXRegFile[reg3_i]; operand3Enable_o <= 1; operand3Writeback_o <= 1; reg3Address_o <= reg3_i; FXPendingWritebackTab[reg3_i] <= 1; end//reg = read/write
 						endcase
 
 					end
@@ -216,15 +229,15 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 			if(reg1isWriteback_i == 1)
 			begin
 				$display("reg 1 writeback. Writing %d to reg %d", reg1WritebackData_i, reg1WritebackAddress_i);
-				regFile[reg1WritebackAddress_i] <= reg1WritebackData_i;
-				isRegPendingWriteback[reg1WritebackAddress_i] <= 0;//reset the iswritebackpending flag for the register
+				FXRegFile[reg1WritebackAddress_i] <= reg1WritebackData_i;
+				FXPendingWritebackTab[reg1WritebackAddress_i] <= 0;//reset the iswritebackpending flag for the register
 			end
 			
 			if(reg2isWriteback_i == 1)
 			begin
 				$display("reg 2 writeback. Writing %d to reg %d", reg2WritebackData_i, reg2WritebackAddress_i);
-				regFile[reg2WritebackAddress_i] <= reg2WritebackData_i;
-				isRegPendingWriteback[reg2WritebackAddress_i] <= 0;
+				FXRegFile[reg2WritebackAddress_i] <= reg2WritebackData_i;
+				FXPendingWritebackTab[reg2WritebackAddress_i] <= 0;
 			end
 		end
 	end
