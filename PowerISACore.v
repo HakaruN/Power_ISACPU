@@ -155,6 +155,7 @@ module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, 
 	wire RegOutXOpCodeEnabled;
 	wire [0:1] RegOutFunctionalUnitCode;
 	wire [0:formatIndexRange-1] RegOutInstructionFormat;
+	wire RegOutis64Bit;
 
 	//Register unit
 	RegisterUnit registerUnit (
@@ -184,8 +185,10 @@ module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, 
     .reg2isWriteback_i(reg2isWriteback_i), 
     .stall_o(stall_o), 
     .enable_o(enable_o),	 
+	 .is64Bit_i(),
 	 //reg read out
 	 .enable_o(RegOutEnable),
+	 .is64Bit_o(RegOutis64Bit),
     .operand1_o(RegOutOperand1), .operand2_o(RegOutOperand2), .operand3_o(RegOutOperand3), 
 	 .reg1Address_o(RegOutReg1Address), .reg2Address_o(RegOutReg2Address), .reg3Address_o(RegOutReg3Address),
 	 .imm_o(RegOutImm), .immEnable_o(RegOutImmEnable),
@@ -205,7 +208,25 @@ module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, 
 	Execution #(
 	.FXUnitCode(FXUnitCode), .FPUnitCode(FPUnitCode), .LdStUnitCode(LdStUnitCode), .BranchUnitCode(BranchUnitCode), .TrapUnitCode(TrapUnitCode))
 	executionUnits(
+		//command
+		.clock_i(clock_i),
+		.reset_i(reset_i),
+		//from reg read
+		.enable_i(RegOutEnable),
+		.is64Bit_i(RegOutis64Bit),
+		.functionalUnitCode_i(RegOutFunctionalUnitCode),
+		.operand1_i(RegOutOperand1), .operand2_i(RegOutOperand2), .operand3_i(RegOutOperand3),
+		.reg1Address_i(RegOutReg1Address), .reg2Address_i(RegOutReg2Address), .reg3Address_i(RegOutReg3Address),
+		.imm_i(RegOutImm), .immEnable_i(RegOutImmEnable),
+		.bit1_i(RegOutBit1), .bit2_i(RegOutBit2),
+		.operand1Enable_i(RegOutOperand1Enable), .operand2Enable_i(RegOutOperand2Enable), .operand3Enable_i(RegOutOperand3Enable), .bit1Enable_i(RegOutBit1Enable), .bit2Enable_i(RegOutBit2Enable),
+		.operand1Writeback_i(RegOutOperand1Writeback), .operand2Writeback_i(RegOutOperand2Writeback), .operand3Writeback_i(RegOutOperand3Writeback),
+		.instructionAddress_i(RegOutInstructionAddress),
+		.opCode_i(RegOutOpCode), .xOpCode_i(RegOutXOpCode),
+		.xOpCodeEnabled_i(RegOutXOpCodeEnabled), instructionFormat_i(RegOutInstructionFormat)
+		
 	);
+
 
 	//stall unit
 	StallUnit stallUnit(

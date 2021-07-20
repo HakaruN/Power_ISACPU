@@ -15,6 +15,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire reset_i,
 	//from reg read
 	input wire enable_i,
+	input wire is64Bit_i,
 	input wire [0:1] functionalUnitCode_i,
 	input wire [0:63] operand1_i, operand2_i, operand3_i,
 	input wire [0:regWidth-1] reg1Address_i, reg2Address_i, reg3Address_i,
@@ -30,6 +31,8 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire [0:formatIndexRange-1] instructionFormat_i
 );
 
+	
+	FXUnit fxunit();
 
 
 

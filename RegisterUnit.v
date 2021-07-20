@@ -31,10 +31,12 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 	input wire [0:addressSize-1] reg1WritebackData_i, reg2WritebackData_i,
 	input wire reg1isWriteback_i, reg2isWriteback_i,
 	input wire [0:regWidth-1] reg1WritebackAddress_i, reg2WritebackAddress_i,
+	input wire is64Bit_i,
 	//command out
 	output reg stall_o,
 	//data out (reg read)
 	output reg enable_o,
+	output reg is64Bit_o,
 	output reg [0:63] operand1_o, operand2_o, operand3_o,
 	output reg [0:regWidth-1] reg1Address_o, reg2Address_o, reg3Address_o,
 	output reg [0:immWith-1] imm_o,
@@ -51,7 +53,7 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 	);
 	integer i;
 	
-	
+	reg is64Bit;
 	reg [32:63] conditionRegister;//CR divided into 8 4-bit blocks/fields
 	//bits:
 	//[0] = negative result bit
@@ -72,6 +74,7 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 		if(reset_i == 1)
 		begin
 			stall_o <= 0;
+			is64Bit <= 1;//default to 64 bit mode
 			conditionRegister <= 0;
 			for(i = 0; i < numRegs; i = i + 1)//reset all registers to not pending a writeback
 			begin
@@ -121,6 +124,7 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 				instructionFormat_o <= instructionFormat_i;
 				instructionAddress_o <= instructionAddress_i;
 				functionalUnitCode_o <= functionalUnitCode_i;
+				is64Bit_o <= is64Bit;
 				//pass through imm value
 				if(immEnable_i == 1)
 				begin
@@ -231,6 +235,7 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 				$display("reg 1 writeback. Writing %d to reg %d", reg1WritebackData_i, reg1WritebackAddress_i);
 				FXRegFile[reg1WritebackAddress_i] <= reg1WritebackData_i;
 				FXPendingWritebackTab[reg1WritebackAddress_i] <= 0;//reset the iswritebackpending flag for the register
+				is64Bit <= is64Bit_i;
 			end
 			
 			if(reg2isWriteback_i == 1)
@@ -238,6 +243,7 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 				$display("reg 2 writeback. Writing %d to reg %d", reg2WritebackData_i, reg2WritebackAddress_i);
 				FXRegFile[reg2WritebackAddress_i] <= reg2WritebackData_i;
 				FXPendingWritebackTab[reg2WritebackAddress_i] <= 0;
+				is64Bit <= is64Bit_i;
 			end
 		end
 	end
