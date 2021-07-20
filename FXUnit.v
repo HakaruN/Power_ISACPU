@@ -34,8 +34,17 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire [0:63] instructionAddress_i,
 	input wire [0:opcodeWidth-1] opCode_i,
 	input wire [0:xOpCodeWidth-1] xOpCode_i,
-	input wire xOpCodeEnabled_i,
-	input wire [0:formatIndexRange-1] instructionFormat_i
+	input wire xOpCodeEnabled_i,	
+	input wire [0:formatIndexRange-1] instructionFormat_i,
+	//outputs
+	output reg conditionRegWriteEnable_o,//tells the reg file to update the CR at writeback with the instruction
+	output reg outputEnable_o,
+	output reg overflow_o,
+	output reg [0:3] conditionRegisterBits_o,
+	output reg is64Bit_o,
+	output reg [0:5] regWritebackAddress_o,
+	output reg [0:63] regWritebackVal_o,
+	output reg [0:1] functionalUnitCode_o
 	);
 	
 	reg [0:63] FXExceptionRegister;//as this is the 64 bit exception register for the fx unit (page 45)
@@ -48,25 +57,23 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//[45] carry32 (CA32)
 	//[46:56] reserved
 	//[57:63] This field specifies the number of bytes to be transferred by a load string index or store string indexed instruction	
-
-	reg [0:127] regWritebackVal;//129 bit register, 128 bits is required to store the maximum result of a mul operation and then an extra bit for overflow
-	reg overflow;
-	reg [0:5] regWritebackAddress;
-	reg [0:3] conditionRegisterBits;
-	reg is64Bit;
+	
 	always @(posedge clock_i)
 	begin
+		functionalUnitCode_o <= FXUnitCode;
 		if(enable_i == 1 && reset_i == 0 && functionalUnitCode_i == FXUnitCode)
 		begin//if were enabled, not reset and the instruction is destin for us
+			outputEnable_o <= 1;
+			is64Bit_o <= is64Bit_i;
 			if(instructionFormat_i == D)
 			begin
 				case(opCode_i)
-					14: begin regWritebackVal <= $signed(operand2_i + imm_i); regWritebackAddress <= reg1Address_i; end//Add Immediate - 16b signed add
-					15: begin regWritebackVal <= $signed(operand2_i + imm_i); regWritebackAddress <= reg1Address_i; end//Add Immediate Shifted
-					12: begin {overflow, regWritebackVal} <= {1'b0,operand2_i} + {1'b0,imm_i}; regWritebackAddress <= reg1Address_i; end//Add Immediate Carrying - specRegs altered: CA, CA32
-					13: begin {overflow, regWritebackVal} <= {1'b0,operand2_i} + {1'b0,imm_i}; regWritebackAddress <= reg1Address_i; end//Add Immediate Carrying and Record - specRegs altered: CR0, CA, CA32
-					8: begin regWritebackVal <= ((~operand2_i) + $signed(imm_i))+1; regWritebackAddress <= reg1Address_i; end//Subtract From Immediate Carrying
-					7: begin regWritebackVal <= operand2_i * $signed(imm_i); end//Multiply Low Immediate
+					14: begin regWritebackVal_o <= $signed(operand2_i + imm_i); regWritebackAddress_o <= reg1Address_i; conditionRegWriteEnable_o <= 0; end//Add Immediate - 16b signed add
+					15: begin regWritebackVal_o <= $signed(operand2_i + imm_i); regWritebackAddress_o <= reg1Address_i; conditionRegWriteEnable_o <= 0; end//Add Immediate Shifted
+					12: begin {overflow_o, regWritebackVal_o} <= {1'b0,operand2_i} + {1'b0,imm_i}; regWritebackAddress_o <= reg1Address_i; conditionRegWriteEnable_o <= 0; end//Add Immediate Carrying - specRegs altered: CA, CA32
+					13: begin {overflow_o, regWritebackVal_o} <= {1'b0,operand2_i} + {1'b0,imm_i}; regWritebackAddress_o <= reg1Address_i; conditionRegWriteEnable_o <= 1; end//Add Immediate Carrying and Record - specRegs altered: CR0, CA, CA32
+					8: begin regWritebackVal_o <= ((~operand2_i) + $signed(imm_i))+1; regWritebackAddress_o <= reg1Address_i; end//Subtract From Immediate Carrying
+					7: begin regWritebackVal_o <= operand2_i * $signed(imm_i); end//Multiply Low Immediate
 					11: 
 					begin 
 					end//Compare Immediate
@@ -119,14 +126,8 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		else
 		begin
 			//else disable the functional unit
+			outputEnable_o <= 0;
 		end
 	end
-	
-	//second stage (result evaluation stage)
-	always @(posedge clock_i)
-	begin
-		
-	end
-
 
 endmodule
