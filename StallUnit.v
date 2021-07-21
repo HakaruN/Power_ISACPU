@@ -19,7 +19,7 @@ module StallUnit(
 	always @(negedge clock_i)
 	begin
 	
-		if(l1iCacheMissStall_i == 1)//check for a stall due to cache miss
+		if(fetchCacheMissStall_i == 1)//check for a stall due to cache miss
 		begin
 			$display("Stalling on cache miss");
 			fetchTagQueryStall_o <= 1;

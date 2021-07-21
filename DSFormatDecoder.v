@@ -3,7 +3,8 @@
 //Implements all Integer DS format instructions
 //All output immediate optputs are to have 2 binary zeroes (2'b00) extended onto the right side before being sign extended to 64 bits.
 //////////////////////////////////////////////////////////////////////////////////
-module DSFormatDecoder#(parameter opcodeWidth = 6, parameter regWidth = 5, parameter immWidth = 14, parameter instructionWidth = 32
+module DSFormatDecoder#(parameter opcodeWidth = 6, parameter regWidth = 5, parameter immWidth = 14, parameter instructionWidth = 32,
+parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, parameter BranchUnitCode = 3, parameter TrapUnitCode = 4//functional unit code/ID used for dispatch
 )(
 	//command in
 	input wire clock_i,

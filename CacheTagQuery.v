@@ -75,7 +75,7 @@ module CacheTagQuery #( parameter offsetSize = 5, parameter indexSize = 8, param
 		begin
 			//update buffers
 			bypassEnable <= fetchEnable_i;
-			if((fetchEnable_i == 1) && (updateEnable_i == 0) && (tagQueryStall_i = 0) && (fetchUnitStall_i = 0))//check if enabled, not updating and not stalled
+			if((fetchEnable_i == 1) && (updateEnable_i == 0) && (tagQueryStall_i == 0) && (fetchUnitStall_i == 0))//check if enabled, not updating and not stalled
 			begin
 				bypassTag <= tag_i;
 				bypassIndex <= index_i;
