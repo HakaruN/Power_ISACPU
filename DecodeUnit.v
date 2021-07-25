@@ -258,7 +258,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	.xOEnable_i(XOEnable),
 	.xOReg1_i(XOReg1), .xOReg2_i(XOReg2), .xOReg3_i(XOReg3),
 	.xOopcode_i(XOopCode),
-	.XOfunctionalUnitCode_i(XOfunctionalUnitCode),
+	.xOfunctionalUnitCode_i(XOfunctionalUnitCode),
 	.xOit1_i(XOBit1), .xOBit2_i(XOBit2),
 	//outputs
 	.enable_o(enable_o),

@@ -29,11 +29,51 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire [0:opcodeWidth-1] opCode_i,
 	input wire [0:xOpCodeWidth-1] xOpCode_i,
 	input wire xOpCodeEnabled_i,
-	input wire [0:formatIndexRange-1] instructionFormat_i
+	input wire [0:formatIndexRange-1] instructionFormat_i,
+	//reg writebacks
+	output reg conditionRegWriteEnable1_o, conditionRegWriteEnable2_o
 );
-
+/*
+	.conditionRegWriteEnable_o(),//tells the reg file to update the CR at writeback with the instruction
+		.outputEnable_o(),
+		.overflow_o(),
+		.conditionRegisterBits_o(),
+		.is64Bit_o(),
+		.regWritebackAddress_o(),
+		.regWritebackVal_o(),
+		.functionalUnitCode_o()
+*/
 	
-	FXUnit fxunit();
+	FXUnit fxunit(
+		//command
+		.clock_i(clock_i),
+		.reset_i(reset_i),
+		.enable_i(enable_i),
+		//data in
+		.is64Bit_i(is64Bit_i),
+		.functionalUnitCode_i(functionalUnitCode_i),
+		.operand1_i(operand1_i), .operand2_i(operand2_i), .operand3_i(operand3_i),
+		.reg1Address_i(reg1Address_i), .reg2Address_i(reg2Address_i), .reg3Address_i(reg3Address_i),
+		.imm_i(imm_i),
+		.immEnable_i(immEnable_i),
+		.bit1_i(bit1_i), .bit2_i(bit2_i),
+		.operand1Enable_i(operand1Enable_i), .operand2Enable_i(operand2Enable_i), .operand3Enable_i(operand3Enable_i), .bit1Enable_i(bit1Enable_i), .bit2Enable_i(bit2Enable_i),
+		.operand1Writeback_i(operand1Writeback_i), .operand2Writeback_i(operand2Writeback_i), .operand3Writeback_i(operand3Writeback_i),
+		.instructionAddress_i(instructionAddress_i),
+		.opCode_i(opCode_i),
+		.xOpCode_i(xOpCode_i),
+		.xOpCodeEnabled_i(xOpCodeEnabled_i),	
+		.instructionFormat_i(instructionFormat_i),
+		//outputs
+		.conditionRegWriteEnable_o(),//tells the reg file to update the CR at writeback with the instruction
+		.outputEnable_o(),
+		.overflow_o(),
+		.conditionRegisterBits_o(),
+		.is64Bit_o(),
+		.regWritebackAddress_o(),
+		.regWritebackVal_o(),
+		.functionalUnitCode_o()
+	);
 
 
 

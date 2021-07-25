@@ -2,8 +2,10 @@
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, parameter iMemoryAddressSize = 16, parameter instructionSize = 32,
-	parameter iCacheOffsetSize = 5, iCacheIndexSize = 8, iCacheTagSize = addressSize - (iCacheOffsetSize + iCacheIndexSize), parameter blockSize = 256,	
-	parameter formatIndexRange = 5, parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, parameter immWidth = 16
+parameter regImm = 0, parameter immWith = 16,
+parameter iCacheOffsetSize = 5, iCacheIndexSize = 8, iCacheTagSize = addressSize - (iCacheOffsetSize + iCacheIndexSize), parameter blockSize = 256,	
+parameter formatIndexRange = 5, parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, parameter immWidth = 16,
+parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, parameter BranchUnitCode = 3, parameter TrapUnitCode = 4//functional unit code/ID used for dispatch
 	)(
 	//command
 	input wire clock_i,
@@ -68,8 +70,8 @@ module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, 
 		.clock_i(clock_i), 
 		.reset_i(reset_i), 
 		.flushPipeline_i(flushPipeline),
-		.tagQueryStall_i(stallTagQuery),
-		.fetchUnitStall_i(stallFullUnit),
+		.stallTagQuery_i(stallTagQuery),
+		.stallFullUnit_i(stallFullUnit),
 		//fetch input
 		.enable_i(fetchEnable), 
 		.address_i(PC), 
@@ -178,14 +180,13 @@ module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, 
     .xOpCodeEnabled_i(decodeXOpCodeEnabled), 
 	 .functionalUnitCode_i(decodeFunctionalUnitCode),
     .instructionFormat_i(decodeInstructionFormat), 
-	 //reg write in
-    .reg1WritebackData_i(reg1WritebackData_i), 
-    .reg2WritebackData_i(reg2WritebackData_i), 
-    .reg1isWriteback_i(reg1isWriteback_i), 
-    .reg2isWriteback_i(reg2isWriteback_i), 
-    .stall_o(stall_o), 
-    .enable_o(enable_o),	 
+	 //reg write in	 
+    .reg1WritebackData_i(), .reg2WritebackData_i(), 
+    .reg1isWriteback_i(), .reg2isWriteback_i(), 
+	 .reg1WritebackAddress_i(), .reg2WritebackAddress_i(),
 	 .is64Bit_i(),
+	 //command out
+    .stall_o(stall_o), 
 	 //reg read out
 	 .enable_o(RegOutEnable),
 	 .is64Bit_o(RegOutis64Bit),
@@ -223,15 +224,14 @@ module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, 
 		.operand1Writeback_i(RegOutOperand1Writeback), .operand2Writeback_i(RegOutOperand2Writeback), .operand3Writeback_i(RegOutOperand3Writeback),
 		.instructionAddress_i(RegOutInstructionAddress),
 		.opCode_i(RegOutOpCode), .xOpCode_i(RegOutXOpCode),
-		.xOpCodeEnabled_i(RegOutXOpCodeEnabled), instructionFormat_i(RegOutInstructionFormat)
-		
+		.xOpCodeEnabled_i(RegOutXOpCodeEnabled), .instructionFormat_i(RegOutInstructionFormat)
 	);
 
 
 	//stall unit
 	StallUnit stallUnit(
 		//stall inputs
-		.l1iCacheMissStall_i(isCacheMiss),
+		.fetchCacheMissStall_i(isCacheMiss),
 		.regFileStall_i(),//TODO: Implement a reg unit stall line
 		//stall outputs
 		.fetchFullStall_o(stallFullUnit),
