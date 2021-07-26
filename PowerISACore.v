@@ -159,6 +159,14 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	wire [0:formatIndexRange-1] RegOutInstructionFormat;
 	wire RegOutis64Bit;
 
+	//functional unit outputs (reg writeback)
+	wire ExecLoadStoreStallOut;
+	wire ExecBranchStallOut;
+	wire [0:1] ExecFunctionalUnitCodeOut;
+	wire ExecReg1WritebackEnable, ExecReg2WritebackEnable;
+	wire [0:5] ExecReg1WritebackAddress, ExecReg2WritebackAddress;
+	wire [0:63] ExecReg1WritebackVal, ExecReg2WritebackVal;
+	
 	//Register unit
 	RegisterUnit registerUnit (
     .clock_i(clock_i), 
@@ -180,11 +188,11 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
     .xOpCodeEnabled_i(decodeXOpCodeEnabled), 
 	 .functionalUnitCode_i(decodeFunctionalUnitCode),
     .instructionFormat_i(decodeInstructionFormat), 
-	 //reg write in	 
-    .reg1WritebackData_i(), .reg2WritebackData_i(), 
-    .reg1isWriteback_i(), .reg2isWriteback_i(), 
-	 .reg1WritebackAddress_i(), .reg2WritebackAddress_i(),
-	 .is64Bit_i(),
+	 //reg write in	
+	 //TODO Implement this: .regWritebackFunctionalUnitCode_i
+    .reg1WritebackData_i(ExecReg1WritebackVal), .reg2WritebackData_i(ExecReg2WritebackVal), 
+    .reg1isWriteback_i(ExecReg1WritebackEnable), .reg2isWriteback_i(ExecReg2WritebackEnable), 
+	 .reg1WritebackAddress_i(ExecReg1WritebackAddress), .reg2WritebackAddress_i(ExecReg2WritebackAddress),	 
 	 //command out
     .stall_o(stall_o), 
 	 //reg read out
@@ -203,7 +211,6 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	 .functionalUnitCode_o(RegOutFunctionalUnitCode),
     .instructionFormat_o(RegOutInstructionFormat)
     );
-	
 	
 	//exec units
 	Execution #(
@@ -225,8 +232,15 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		.instructionAddress_i(RegOutInstructionAddress),
 		.opCode_i(RegOutOpCode), .xOpCode_i(RegOutXOpCode),
 		.xOpCodeEnabled_i(RegOutXOpCodeEnabled), .instructionFormat_i(RegOutInstructionFormat)
+		//command out
+		.loadStoreStall(ExecLoadStoreStallOut), .branchStall(ExecBranchStallOut),
+		//reg writeback
+		.functionalUnitCode_o(ExecFunctionalUnitCodeOut),
+		.reg1WritebackEnable_o(ExecReg1WritebackEnable), .reg2WritebackEnable_o(ExecReg2WritebackEnable),
+		.reg1WritebackAddress_o(ExecReg1WritebackAddress), .reg2WritebackAddress_o(ExecReg2WritebackAddress),
+		.reg1WritebackVal_o(ExecReg1WritebackVal), .reg2WritebackVal_o(ExecReg2WritebackVal)
 	);
-
+	
 
 	//stall unit
 	StallUnit stallUnit(

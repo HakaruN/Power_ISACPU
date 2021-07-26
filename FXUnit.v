@@ -37,7 +37,6 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire xOpCodeEnabled_i,	
 	input wire [0:formatIndexRange-1] instructionFormat_i,
 	//outputs
-	output wire outputEnable_o,	
 	output wire [0:1] functionalUnitCode_o,
 	output wire reg1WritebackEnable_o, reg2WritebackEnable_o,//reg2 enable condition reg writeEnable
 	output wire [0:5] reg1WritebackAddress_o, reg2WritebackAddress_o,//reg2 address is used to write back the condition reg bits
@@ -60,7 +59,6 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		functionalUnitCode_o <= FXUnitCode;
 		if(enable_i == 1 && reset_i == 0 && functionalUnitCode_i == FXUnitCode)
 		begin//if were enabled, not reset and the instruction is destin for us
-			outputEnable_o <= 1;
 			is64Bit_o <= is64Bit_i;
 			if(instructionFormat_i == D)
 			begin
@@ -123,7 +121,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		else
 		begin
 			//else disable the functional unit
-			outputEnable_o <= 0;
+			reg1WritebackEnable_o <= 0; reg2WritebackEnable_o <= 0;
 		end
 	end
 

@@ -30,7 +30,6 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//command out
 	output wire stall_o,
 	//data out
-	output wire outputEnable_o,
 	output wire [0:1] functionalUnitCode_o,
 	output wire reg1WritebackEnable_o, reg2WritebackEnable_o,
 	output wire [0:5] reg1WritebackAddress_o, reg2WritebackAddress_o,
@@ -62,9 +61,8 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	always @(posedge clock_i)
 	begin
 		functionalUnitCode_o <= LdStUnitCode;//as this output will never change we set it here to allow the compiler to optimise it into hard logic
-		else if(reset_i == 0 && enable_i == 1 && functionalUnitCode_i == LdStUnitCode)
+		if(reset_i == 0 && enable_i == 1 && functionalUnitCode_i == LdStUnitCode)
 		begin
-			outputEnable_o <= 1;
 			if(instructionFormat_i == D)
 			begin
 				case(opCode_i)
@@ -240,6 +238,9 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 				end
 			end
 		end
+		else
+		begin
+		end
 	end
 	
 	//this always is the second stage used for loads
@@ -248,7 +249,6 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		if(reset_i == 1)//if we're resetting
 		begin
 			fetchedBlock <= 0;
-			outputEnable_o <= 0;
 		end
 		else if(isBlockFetched)//if we fetched a block last cycle
 		begin
@@ -341,14 +341,12 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 				default: begin
 					reg1WritebackEnable_o <= 0;
 					reg2WritebackEnable_o <= 0;
-					outputEnable_o <= 0;
 				end//throw error
-			endcase
-			outputEnable_o <= 1;			
+			endcase		
 		end
 		else//if we didn't fetch a block last cycle
 		begin
-			outputEnable_o <= 0;
+			reg1WritebackEnable_o <= 0; reg2WritebackEnable_o <= 0;
 		end		
 	end
 	

@@ -33,7 +33,6 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//command out
 	output wire loadStoreStall, output wire branchStall,
 	//reg writebacks
-	output wire outputEnable_o,
 	output wire [0:1] functionalUnitCode_o,
 	output wire reg1WritebackEnable_o, reg2WritebackEnable_o,
 	output wire [0:5] reg1WritebackAddress_o, reg2WritebackAddress_o,
@@ -113,19 +112,16 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		.clock_i(clock_i),
 		.reset_i(reset_i),
 		//FX unit in
-		.FXOutputEnable_i(FXOutputEnable),
 		.FXFunctionalUnitCode_i(FXFunctionalUnitCode),
 		.FXRegWritebackEnable_i(FXRegWritebackEnable), .FXCondRegUpdateEnable_i(FXCondRegUpdateEnable),
 		.FXReg1WritebackAddress_i(FXReg1WritebackAddress), .FXCondRegBits_i(FXCondRegBits),
 		.FXReg1WritebackValue_i(FXReg1WritebackValue), .FXOverFlowUnderFlow_i(FXOverFlowUnderFlow),
 		//LS unit in
-		.LSOutputEnable_i(LSOutputEnable)
 		.LSFunctionalUnitCode_i(LSFunctionalUnitCode),
 		.LSReg1WritebackEnable_i(LSReg1WritebackEnable), .LSReg2WritebackEnable_i(LSReg2WritebackEnable),
 		.LSReg1WritebackAddress_i(LSReg1WritebackAddress), .LSReg2WritebackAddress_i(LSReg2WritebackAddress),
 		.LSReg1WritebackValue_i(LSReg1WritebackValue), .LSReg2WritebackValue_i(LSReg2WritebackValue),
 		//outputs
-		.outputEnable_o(outputEnable_o),
 		.functionalUnitCode_o(functionalUnitCode_o),
 		.reg1WritebackEnable_o(reg1WritebackEnable_o), .reg2WritebackEnable_o(reg2WritebackEnable_o),
 		.reg1WritebackAddress_o(reg1WritebackAddress_o), .reg2WritebackAddress_o(reg2WritebackAddress_o),
