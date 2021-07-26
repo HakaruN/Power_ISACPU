@@ -87,7 +87,10 @@ module CacheTagQuery #( parameter offsetSize = 5, parameter indexSize = 8, param
 				$display("Writing to tag memory");			
 			end
 			if((fetchEnable_i == 1) && (updateEnable_i == 1))
+			begin
+				//TODO throw an error
 				$display("TIMING ERROR: Tag memory canot read and write at the same time (collision is possible)");
+			end
 			
 			//write out buffers
 			if(bypassEnable == 1)

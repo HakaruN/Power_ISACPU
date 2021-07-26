@@ -10,6 +10,7 @@ parameter MD = 9, parameter MDS = 10, parameter SC = 11, parameter VA = 12, para
 parameter XFX = 17, parameter XL = 18, parameter XO = 19, parameter XS = 20, parameter XX2 = 21, parameter XX3 = 22, parameter XX4 = 23, parameter Z22 = 24,
 parameter Z23 = 25, parameter INVALID = 0,
 parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, parameter BranchUnitCode = 3, parameter TrapUnitCode = 4
+)(
 	//command in
 	input wire clock_i,
 	input wire reset_i,
@@ -29,7 +30,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire [0:1] functionalUnitCode_i,
 	input wire [0:formatIndexRange-1] instructionFormat_i,
 	//data in (reg writeback)
-	input wire [0:2] functionalUnitCode_i,
+	input wire [0:2] regWritebackFunctionalUnitCode_i,
 	input wire [0:addressSize-1] reg1WritebackData_i, reg2WritebackData_i,
 	input wire reg1isWriteback_i, reg2isWriteback_i,
 	input wire [0:regWidth-1] reg1WritebackAddress_i, reg2WritebackAddress_i,
@@ -239,12 +240,11 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		end
 		else
 			enable_o <= 0;
-			
+		
+		//reg writeback
 		if(reset_i == 0)
-		begin		
-			
+		begin			
 			case(functionalUnitCode_i)
-			begin
 				//Fixed point writeback
 				FXUnitCode: begin
 					$display("Load store writeback");
@@ -288,7 +288,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 				//BranchUnitCode: begin end
 				//TrapUnitCode: begin end
 				default: begin end
-			end
+			endcase
 		end
 	end
 	

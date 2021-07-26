@@ -37,10 +37,10 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire xOpCodeEnabled_i,	
 	input wire [0:formatIndexRange-1] instructionFormat_i,
 	//outputs
-	output wire [0:1] functionalUnitCode_o,
-	output wire reg1WritebackEnable_o, reg2WritebackEnable_o,//reg2 enable condition reg writeEnable
-	output wire [0:5] reg1WritebackAddress_o, reg2WritebackAddress_o,//reg2 address is used to write back the condition reg bits
-	output wire [0:63] reg1WritebackVal_o, reg2WritebackVal_o//reg2 val is overflow/underflow bits	
+	output reg [0:1] functionalUnitCode_o,
+	output reg reg1WritebackEnable_o, reg2WritebackEnable_o,//reg2 enable condition reg writeEnable
+	output reg [0:5] reg1WritebackAddress_o, reg2WritebackAddress_o,//reg2 address is used to write back the condition reg bits
+	output reg [0:63] reg1WritebackVal_o, reg2WritebackVal_o//reg2 val is overflow/underflow bits	
 	);
 	
 	always @(posedge clock_i)
@@ -48,7 +48,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		functionalUnitCode_o <= FXUnitCode;
 		if(enable_i == 1 && reset_i == 0 && functionalUnitCode_i == FXUnitCode)
 		begin//if were enabled, not reset and the instruction is destin for us
-			is64Bit_o <= is64Bit_i;
+			//is64Bit_o <= is64Bit_i;
 			if(instructionFormat_i == D)
 			begin
 				case(opCode_i)

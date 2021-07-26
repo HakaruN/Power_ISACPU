@@ -5,7 +5,7 @@
 module LoadStoreUnit#(
 parameter memoryBlockSize = 128, parameter numMemoryBlocks = 128,
 parameter loadByte = 1, parameter loadHalfWord = 2, parameter loadWord = 3, parameter loadDoubleword = 4, parameter loadQuadWord = 5,
-parameter storeByte = 1, parameter storeHalfWords = 2, parameter storeWords = 3, parameter storeDoubleWords = 4, parameter storeQuadWord = 5,
+parameter storeByte = 1, parameter storeHalfWord = 2, parameter storeWord = 3, parameter storeDoubleWord = 4, parameter storeQuadWord = 5,
 parameter addressSize = 64, parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter immWith = 16, parameter regWidth = 5, parameter numRegs = 2**regWidth, parameter formatIndexRange = 5,
 parameter A = 1, parameter B = 2, parameter D = 3, parameter DQ = 4, parameter DS = 5, parameter DX = 6, parameter I = 7, parameter M = 8,
 parameter MD = 9, parameter MDS = 10, parameter SC = 11, parameter VA = 12, parameter VC = 13, parameter VX = 14, parameter X = 15, parameter XFL = 16,
@@ -28,12 +28,12 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire [0:regWidth-1] reg1Address_i, reg2Address_i, reg3Address_i,
 	input wire [0:immWith-1] imm_i,
 	//command out
-	output wire stall_o,
+	output reg stall_o,
 	//data out
-	output wire [0:1] functionalUnitCode_o,
-	output wire reg1WritebackEnable_o, reg2WritebackEnable_o,
-	output wire [0:5] reg1WritebackAddress_o, reg2WritebackAddress_o,
-	output wire [0:63] reg1WritebackVal_o, reg2WritebackVal_o
+	output reg [0:1] functionalUnitCode_o,
+	output reg reg1WritebackEnable_o, reg2WritebackEnable_o,
+	output reg [0:5] reg1WritebackAddress_o, reg2WritebackAddress_o,
+	output reg [0:63] reg1WritebackVal_o, reg2WritebackVal_o
     );
 
 	//as memory block size is 128 bits and if we have 128 blocks, we have 2KiB of D-memory
@@ -51,7 +51,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//store buffer
 	reg isStore;//essentially a write enable
 	reg [0:2] storeFormat;
-	reg [0:addressSize-1] storesAddress; reg isUpdate;
+	reg [0:addressSize-1] storeAddress;
 	reg [0:addressSize-1] storeVal;
 	reg isIndexed;//means are we using an immediate or reg (1=reg)
 	
@@ -61,7 +61,11 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	always @(posedge clock_i)
 	begin
 		functionalUnitCode_o <= LdStUnitCode;//as this output will never change we set it here to allow the compiler to optimise it into hard logic
-		if(reset_i == 0 && enable_i == 1 && functionalUnitCode_i == LdStUnitCode)
+		if(reset_i == 1)//if we're resetting
+		begin
+			fetchedBlock <= 0;
+		end
+		else if(reset_i == 0 && enable_i == 1 && functionalUnitCode_i == LdStUnitCode)
 		begin
 			if(instructionFormat_i == D)
 			begin
@@ -162,7 +166,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 						storeAddress <= operand2_i + imm_i;//calculate the address
 						storeVal <= operand1_i;
 						isUpdate <= 0;
-						storeFormat <= storeHalfword;
+						storeFormat <= storeHalfWord;
 						isIndexed <= 0;
 					end
 					45: begin //Store Halfword with Update
@@ -171,7 +175,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 						storeAddress <= operand2_i + imm_i;//calculate the address
 						storeVal <= operand1_i;
 						isUpdate <= 1;
-						storeFormat <= storeHalfword;
+						storeFormat <= storeHalfWord;
 						isIndexed <= 0;
 					end
 					36: begin //Store Word
@@ -248,9 +252,9 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	begin
 		if(reset_i == 1)//if we're resetting
 		begin
-			fetchedBlock <= 0;
+			//fetchedBlock <= 0;
 		end
-		else if(isBlockFetched)//if we fetched a block last cycle
+		else if(isLoad)//if we fetched a block last cycle
 		begin
 			case(loadFormat)
 				//load 8 bits
@@ -350,12 +354,6 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		end		
 	end
 	
-		
-
-	reg [0:addressSize-1] storesAddress; reg isUpdate;
-	reg [0:addressSize-1] storeVal;
-	reg isIndexed;//means are we using an immediate or reg (1=reg)
-	
 	//this always is the second stage used for loads
 	always @(posedge clock_i)
 	begin
@@ -369,11 +367,10 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		else if(isStore == 1)
 		begin
 			case(storeFormat)
-				fetchedBlock[(storesAddress % memoryBlockSize)+:8] <= storeVal[63-:8];
-				storeByte: begin dataMemory[storesAddress+:8] <= storeVal[63-:8]; end//store the lsB to memory
-				storeHalfWords: begin end
-				storeWords: begin end
-				storeDoubleWords: begin end
+				storeByte: begin /*dataMemory[storesAddress+:8] <= storeVal[63-:8];*/ end//store the lsB to memory
+				storeHalfWord: begin end
+				storeWord: begin end
+				storeDoubleWord: begin end
 				storeQuadWord: begin end
 				default: begin end
 			endcase

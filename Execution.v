@@ -40,7 +40,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 );
 	
 	wire FXOutputEnable;
-	wire [0:1] FXFunctionalUnitCode,
+	wire [0:1] FXFunctionalUnitCode;
 	wire FXRegWritebackEnable, FXCondRegUpdateEnable;
 	wire [0:regWidth-1] FXReg1WritebackAddress, FXCondRegBits;
 	wire [0:addressSize-1] FXReg1WritebackValue, FXOverFlowUnderFlow;
@@ -56,7 +56,6 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		.operand1_i(operand1_i), .operand2_i(operand2_i), .operand3_i(operand3_i),
 		.reg1Address_i(reg1Address_i), .reg2Address_i(reg2Address_i), .reg3Address_i(reg3Address_i),
 		.imm_i(imm_i),
-		.immEnable_i(immEnable_i),
 		.bit1_i(bit1_i), .bit2_i(bit2_i),
 		.operand1Enable_i(operand1Enable_i), .operand2Enable_i(operand2Enable_i), .operand3Enable_i(operand3Enable_i), .bit1Enable_i(bit1Enable_i), .bit2Enable_i(bit2Enable_i),
 		.operand1Writeback_i(operand1Writeback_i), .operand2Writeback_i(operand2Writeback_i), .operand3Writeback_i(operand3Writeback_i),
@@ -66,7 +65,6 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		.xOpCodeEnabled_i(xOpCodeEnabled_i),	
 		.instructionFormat_i(instructionFormat_i),
 		//outputs
-		.outputEnable_o(FXOutputEnable),
 		.functionalUnitCode_o(FXFunctionalUnitCode),
 		.reg1WritebackEnable_o(FXRegWritebackEnable), .reg2WritebackEnable_o(FXCondRegUpdateEnable),//reg2 enable condition reg writeEnable
 		.reg1WritebackAddress_o(FXReg1WritebackAddress), .reg2WritebackAddress_o(FXCondRegBits),//reg2 address is used to write back the condition reg bits
@@ -75,7 +73,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	
 	
 	wire LSOutputEnable;
-	wire [0:1] LSFunctionalUnitCode,
+	wire [0:1] LSFunctionalUnitCode;
 	wire LSReg1WritebackEnable, LSReg2WritebackEnable;
 	wire [0:regWidth-1] LSReg1WritebackAddress, LSReg2WritebackAddress;
 	wire [0:addressSize-1] LSReg1WritebackValue, LSReg2WritebackValue;
@@ -98,7 +96,6 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//command out
 	.stall_o(loadStoreStall),
 	//data out
-	.outputEnable_o(LSOutputEnable),
 	.functionalUnitCode_o(LSFunctionalUnitCode),
 	.reg1WritebackEnable_o(LSReg1WritebackEnable), .reg2WritebackEnable_o(LSReg2WritebackEnable),
 	.reg1WritebackAddress_o(LSReg1WritebackAddress), .reg2WritebackAddress_o(LSReg2WritebackAddress),

@@ -189,7 +189,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	 .functionalUnitCode_i(decodeFunctionalUnitCode),
     .instructionFormat_i(decodeInstructionFormat), 
 	 //reg write in	
-	 //TODO Implement this: .regWritebackFunctionalUnitCode_i
+	 .regWritebackFunctionalUnitCode_i(ExecFunctionalUnitCodeOut),
     .reg1WritebackData_i(ExecReg1WritebackVal), .reg2WritebackData_i(ExecReg2WritebackVal), 
     .reg1isWriteback_i(ExecReg1WritebackEnable), .reg2isWriteback_i(ExecReg2WritebackEnable), 
 	 .reg1WritebackAddress_i(ExecReg1WritebackAddress), .reg2WritebackAddress_i(ExecReg2WritebackAddress),	 
@@ -231,7 +231,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		.operand1Writeback_i(RegOutOperand1Writeback), .operand2Writeback_i(RegOutOperand2Writeback), .operand3Writeback_i(RegOutOperand3Writeback),
 		.instructionAddress_i(RegOutInstructionAddress),
 		.opCode_i(RegOutOpCode), .xOpCode_i(RegOutXOpCode),
-		.xOpCodeEnabled_i(RegOutXOpCodeEnabled), .instructionFormat_i(RegOutInstructionFormat)
+		.xOpCodeEnabled_i(RegOutXOpCodeEnabled), .instructionFormat_i(RegOutInstructionFormat),
 		//command out
 		.loadStoreStall(ExecLoadStoreStallOut), .branchStall(ExecBranchStallOut),
 		//reg writeback
