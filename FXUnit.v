@@ -43,17 +43,6 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	output wire [0:63] reg1WritebackVal_o, reg2WritebackVal_o//reg2 val is overflow/underflow bits	
 	);
 	
-	reg [0:63] FXExceptionRegister;//as this is the 64 bit exception register for the fx unit (page 45)
-	//[0:31] reserved
-	//[32] summary overflow (SO)
-	//[33] overflow (OV)
-	//[34] carry (CA)
-	//[35:43] reserved
-	//[44] overflow32 (OV32)
-	//[45] carry32 (CA32)
-	//[46:56] reserved
-	//[57:63] This field specifies the number of bytes to be transferred by a load string index or store string indexed instruction	
-	
 	always @(posedge clock_i)
 	begin
 		functionalUnitCode_o <= FXUnitCode;

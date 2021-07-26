@@ -8,7 +8,8 @@ parameter regImm = 0, parameter regRead = 1, parameter regWrite = 2, parameter r
 parameter A = 1, parameter B = 2, parameter D = 3, parameter DQ = 4, parameter DS = 5, parameter DX = 6, parameter I = 7, parameter M = 8,
 parameter MD = 9, parameter MDS = 10, parameter SC = 11, parameter VA = 12, parameter VC = 13, parameter VX = 14, parameter X = 15, parameter XFL = 16,
 parameter XFX = 17, parameter XL = 18, parameter XO = 19, parameter XS = 20, parameter XX2 = 21, parameter XX3 = 22, parameter XX4 = 23, parameter Z22 = 24,
-parameter Z23 = 25, parameter INVALID = 0 )(
+parameter Z23 = 25, parameter INVALID = 0,
+parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, parameter BranchUnitCode = 3, parameter TrapUnitCode = 4
 	//command in
 	input wire clock_i,
 	input wire reset_i,
@@ -28,6 +29,7 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 	input wire [0:1] functionalUnitCode_i,
 	input wire [0:formatIndexRange-1] instructionFormat_i,
 	//data in (reg writeback)
+	input wire [0:2] functionalUnitCode_i,
 	input wire [0:addressSize-1] reg1WritebackData_i, reg2WritebackData_i,
 	input wire reg1isWriteback_i, reg2isWriteback_i,
 	input wire [0:regWidth-1] reg1WritebackAddress_i, reg2WritebackAddress_i,
@@ -60,6 +62,17 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 	//[1] = positive result bit
 	//[2] = zero result bit
 	//[3] = summary overflow bit
+	
+	reg [0:63] FXExceptionRegister;//as this is the 64 bit exception register for the fx unit (page 45)
+	//[0:31] reserved
+	//[32] summary overflow (SO)
+	//[33] overflow (OV)
+	//[34] carry (CA)
+	//[35:43] reserved
+	//[44] overflow32 (OV32)
+	//[45] carry32 (CA32)
+	//[46:56] reserved
+	//[57:63] This field specifies the number of bytes to be transferred by a load string index or store string indexed instruction	
 	
 	
 	//TODO: Make seperate writeback tables and reg files for FX and FP units
@@ -229,21 +242,52 @@ parameter Z23 = 25, parameter INVALID = 0 )(
 			
 		if(reset_i == 0)
 		begin		
-			//perform reg writebacks
-			if(reg1isWriteback_i == 1)
-			begin
-				$display("reg 1 writeback. Writing %d to reg %d", reg1WritebackData_i, reg1WritebackAddress_i);
-				FXRegFile[reg1WritebackAddress_i] <= reg1WritebackData_i;
-				FXPendingWritebackTab[reg1WritebackAddress_i] <= 0;//reset the iswritebackpending flag for the register
-				is64Bit <= is64Bit_i;
-			end
 			
-			if(reg2isWriteback_i == 1)
+			case(functionalUnitCode_i)
 			begin
-				$display("reg 2 writeback. Writing %d to reg %d", reg2WritebackData_i, reg2WritebackAddress_i);
-				FXRegFile[reg2WritebackAddress_i] <= reg2WritebackData_i;
-				FXPendingWritebackTab[reg2WritebackAddress_i] <= 0;
-				is64Bit <= is64Bit_i;
+				//Fixed point writeback
+				FXUnitCode: begin
+					$display("Load store writeback");
+					if(reg1isWriteback_i == 1)
+					begin
+						$display("reg 1 writeback. Writing %d to reg %d", reg1WritebackData_i, reg1WritebackAddress_i);
+						FXRegFile[reg1WritebackAddress_i] <= reg1WritebackData_i;
+						FXPendingWritebackTab[reg1WritebackAddress_i] <= 0;//reset the iswritebackpending flag for the register
+						is64Bit <= is64Bit_i;
+					end
+					if(reg2isWriteback_i == 1)
+					begin
+						conditionRegister <= reg2WritebackAddress_i[0:4];//set the condition reg
+						//FXExceptionRegister[some bits] <= reg1WritebackData_i[some bits]; TODO: UPDATE THIS REG 
+					end
+				end
+				
+				//Floating point writeback
+				FPUnitCode: begin end
+				
+				//Load Store writeback
+				LdStUnitCode: begin
+					$display("Load store writeback");
+					if(reg1isWriteback_i == 1)
+					begin
+						$display("reg 1 writeback. Writing %d to reg %d", reg1WritebackData_i, reg1WritebackAddress_i);
+						FXRegFile[reg1WritebackAddress_i] <= reg1WritebackData_i;
+						FXPendingWritebackTab[reg1WritebackAddress_i] <= 0;//reset the iswritebackpending flag for the register
+						is64Bit <= is64Bit_i;
+					end
+					if(reg2isWriteback_i == 1)
+					begin
+						$display("reg 2 writeback. Writing %d to reg %d", reg2WritebackData_i, reg2WritebackAddress_i);
+						FXRegFile[reg2WritebackAddress_i] <= reg2WritebackData_i;
+						FXPendingWritebackTab[reg2WritebackAddress_i] <= 0;
+						is64Bit <= is64Bit_i;
+					end
+				end
+				
+				//probably dont need these
+				//BranchUnitCode: begin end
+				//TrapUnitCode: begin end
+				default: begin end
 			end
 		end
 	end
