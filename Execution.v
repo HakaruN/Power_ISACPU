@@ -30,19 +30,14 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire [0:xOpCodeWidth-1] xOpCode_i,
 	input wire xOpCodeEnabled_i,
 	input wire [0:formatIndexRange-1] instructionFormat_i,
+	//command out
+	output wire loadStoreStall, output wire branchStall,
 	//reg writebacks
-	output reg conditionRegWriteEnable1_o, conditionRegWriteEnable2_o
+	output wire [0:1] functionalUnitCode_o,
+	output wire reg1WritebackEnable_o, reg2WritebackEnable_o,
+	output wire [0:5] reg1WritebackAddress_o, reg2WritebackAddress_o,
+	output wire [0:63] reg1WritebackVal_o, reg2WritebackVal_o
 );
-/*
-	.conditionRegWriteEnable_o(),//tells the reg file to update the CR at writeback with the instruction
-		.outputEnable_o(),
-		.overflow_o(),
-		.conditionRegisterBits_o(),
-		.is64Bit_o(),
-		.regWritebackAddress_o(),
-		.regWritebackVal_o(),
-		.functionalUnitCode_o()
-*/
 	
 	FXUnit fxunit(
 		//command
@@ -73,6 +68,31 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		.regWritebackAddress_o(),
 		.regWritebackVal_o(),
 		.functionalUnitCode_o()
+	);
+	
+	LoadStoreUnit loadStoreUnit(
+	//command
+	.clock_i(clock_i),
+	.reset_i(reset_i),
+	.enable_i(enable_i),
+	//data in
+	.functionalUnitCode_i(functionalUnitCode_i),
+	.instructionAddress_i(instructionAddress_i),
+	.opCode_i(opCode_i),
+	.xOpCode_i(xOpCode_i),
+	.xOpCodeEnabled_i(xOpCodeEnabled_i),	
+	.instructionFormat_i(instructionFormat_i),
+	.operand1_i(operand1_i), .operand2_i(operand2_i), .operand3_i(operand3_i),
+	.reg1Address_i(reg1Address_i), .reg2Address_i(reg2Address_i), .reg3Address_i(reg3Address_i),
+	.imm_i(imm_i),
+	//command out
+	.stall_o(loadStoreStall),
+	//data out
+	.outputEnable_o(),
+	.functionalUnitCode_o(),
+	.reg1WritebackEnable_o(), .reg2WritebackEnable_o(),
+	.reg1WritebackAddress_o(), .reg2WritebackAddress_o(),
+	.reg1WritebackVal_o(), .reg2WritebackVal_o()
 	);
 
 

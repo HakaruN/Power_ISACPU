@@ -37,6 +37,12 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire xOpCodeEnabled_i,	
 	input wire [0:formatIndexRange-1] instructionFormat_i,
 	//outputs
+	output reg [0:1] functionalUnitCode_o,
+	output reg reg1WritebackEnable_o, reg2WritebackEnable_o,
+	output reg [0:5] reg1WritebackAddress_o, reg2WritebackAddress_o,
+	output reg [0:63] reg1WritebackVal_o, reg2WritebackVal_o
+	
+	
 	output reg conditionRegWriteEnable_o,//tells the reg file to update the CR at writeback with the instruction
 	output reg outputEnable_o,
 	output reg overflow_o,
@@ -44,7 +50,6 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	output reg is64Bit_o,
 	output reg [0:5] regWritebackAddress_o,
 	output reg [0:63] regWritebackVal_o,
-	output reg [0:1] functionalUnitCode_o
 	);
 	
 	reg [0:63] FXExceptionRegister;//as this is the 64 bit exception register for the fx unit (page 45)
@@ -68,12 +73,12 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 			if(instructionFormat_i == D)
 			begin
 				case(opCode_i)
-					14: begin regWritebackVal_o <= $signed(operand2_i + imm_i); regWritebackAddress_o <= reg1Address_i; conditionRegWriteEnable_o <= 0; end//Add Immediate - 16b signed add
-					15: begin regWritebackVal_o <= $signed(operand2_i + imm_i); regWritebackAddress_o <= reg1Address_i; conditionRegWriteEnable_o <= 0; end//Add Immediate Shifted
-					12: begin {overflow_o, regWritebackVal_o} <= {1'b0,operand2_i} + {1'b0,imm_i}; regWritebackAddress_o <= reg1Address_i; conditionRegWriteEnable_o <= 0; end//Add Immediate Carrying - specRegs altered: CA, CA32
-					13: begin {overflow_o, regWritebackVal_o} <= {1'b0,operand2_i} + {1'b0,imm_i}; regWritebackAddress_o <= reg1Address_i; conditionRegWriteEnable_o <= 1; end//Add Immediate Carrying and Record - specRegs altered: CR0, CA, CA32
-					8: begin regWritebackVal_o <= ((~operand2_i) + $signed(imm_i))+1; regWritebackAddress_o <= reg1Address_i; end//Subtract From Immediate Carrying
-					7: begin regWritebackVal_o <= operand2_i * $signed(imm_i); end//Multiply Low Immediate
+					14: begin reg1WritebackVal_o <= $signed(operand2_i + imm_i); reg1WritebackAddress_o <= reg1Address_i; reg2WritebackEnable_o <= 0; end//Add Immediate - 16b signed add
+					15: begin reg1WritebackVal_o <= $signed(operand2_i + imm_i); reg1WritebackAddress_o <= reg1Address_i; reg2WritebackEnable_o <= 0; end//Add Immediate Shifted
+					12: begin {overflow_o, reg1WritebackVal_o} <= {1'b0,operand2_i} + {1'b0,imm_i}; reg1WritebackAddress_o <= reg1Address_i; reg2WritebackEnable_o <= 0; end//Add Immediate Carrying - specRegs altered: CA, CA32
+					13: begin {overflow_o, reg1WritebackVal_o} <= {1'b0,operand2_i} + {1'b0,imm_i}; reg1WritebackAddress_o <= reg1Address_i; reg2WritebackEnable_o <= 1; end//Add Immediate Carrying and Record - specRegs altered: CR0, CA, CA32
+					8: begin reg1WritebackVal_o <= ((~operand2_i) + $signed(imm_i))+1; reg1WritebackAddress_o <= reg1Address_i; end//Subtract From Immediate Carrying
+					7: begin reg1WritebackVal_o <= operand2_i * $signed(imm_i); end//Multiply Low Immediate
 					11: 
 					begin 
 					end//Compare Immediate
