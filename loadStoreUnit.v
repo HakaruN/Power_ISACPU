@@ -28,13 +28,13 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire [0:regWidth-1] reg1Address_i, reg2Address_i, reg3Address_i,
 	input wire [0:immWith-1] imm_i,
 	//command out
-	output reg stall_o,
+	output wire stall_o,
 	//data out
-	output reg outputEnable_o,
-	output reg [0:1] functionalUnitCode_o,
-	output reg reg1WritebackEnable_o, reg2WritebackEnable_o,
-	output reg [0:5] reg1WritebackAddress_o, reg2WritebackAddress_o,
-	output reg [0:63] reg1WritebackVal_o, reg2WritebackVal_o
+	output wire outputEnable_o,
+	output wire [0:1] functionalUnitCode_o,
+	output wire reg1WritebackEnable_o, reg2WritebackEnable_o,
+	output wire [0:5] reg1WritebackAddress_o, reg2WritebackAddress_o,
+	output wire [0:63] reg1WritebackVal_o, reg2WritebackVal_o
     );
 
 	//as memory block size is 128 bits and if we have 128 blocks, we have 2KiB of D-memory

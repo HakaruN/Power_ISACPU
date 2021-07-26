@@ -3,7 +3,7 @@
 //This module is mearly a collection of the functional units, it has no logic of it's own
 //the idea is that it just allows the functional units to be cleanly grouped
 //////////////////////////////////////////////////////////////////////////////////
-module Execution#(
+module Execution#(parameter addressSize = 64,
 parameter regWidth = 5, parameter regImm = 0, parameter immWith = 16, parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter formatIndexRange = 5,
 parameter A = 1, parameter B = 2, parameter D = 3, parameter DQ = 4, parameter DS = 5, parameter DX = 6, parameter I = 7, parameter M = 8,
 parameter MD = 9, parameter MDS = 10, parameter SC = 11, parameter VA = 12, parameter VC = 13, parameter VX = 14, parameter X = 15, parameter XFL = 16,
@@ -39,6 +39,12 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	output wire [0:63] reg1WritebackVal_o, reg2WritebackVal_o
 );
 	
+	wire FXOutputEnable;
+	wire [0:1] FXFunctionalUnitCode,
+	wire FXRegWritebackEnable; wire FXCondRegUpdateEnable;
+	wire [0:regWidth-1] FXReg1WritebackAddress, FXCondRegBits;
+	wire [0:addressSize-1] FXReg1WritebackValue, FXOverFlowUnderFlow;
+	//FX (Integer) unit
 	FXUnit fxunit(
 		//command
 		.clock_i(clock_i),
@@ -60,16 +66,20 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		.xOpCodeEnabled_i(xOpCodeEnabled_i),	
 		.instructionFormat_i(instructionFormat_i),
 		//outputs
-		.conditionRegWriteEnable_o(),//tells the reg file to update the CR at writeback with the instruction
-		.outputEnable_o(),
-		.overflow_o(),
-		.conditionRegisterBits_o(),
-		.is64Bit_o(),
-		.regWritebackAddress_o(),
-		.regWritebackVal_o(),
-		.functionalUnitCode_o()
+		.outputEnable_o(FXOutputEnable),
+		.functionalUnitCode_o(FXFunctionalUnitCode),
+		.reg1WritebackEnable_o(FXRegWritebackEnable), .reg2WritebackEnable_o(FXCondRegUpdateEnable),//reg2 enable condition reg writeEnable
+		.reg1WritebackAddress_o(FXReg1WritebackAddress), .reg2WritebackAddress_o(FXCondRegBits),//reg2 address is used to write back the condition reg bits
+		.reg1WritebackVal_o(FXReg1WritebackValue), .reg2WritebackVal_o(FXOverFlowUnderFlow)//reg2 val is overflow/underflow bits	
 	);
 	
+	
+	wire LSOutputEnable;
+	wire [0:1] LSFunctionalUnitCode,
+	wire LSReg1WritebackEnable, LSReg2WritebackEnable;
+	wire [0:regWidth-1] LSReg1WritebackAddress, LSReg2WritebackAddress;
+	wire [0:addressSize-1] LSReg1WritebackValue, LSReg2WritebackValue;
+	//LoadStore unit
 	LoadStoreUnit loadStoreUnit(
 	//command
 	.clock_i(clock_i),
@@ -88,13 +98,15 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//command out
 	.stall_o(loadStoreStall),
 	//data out
-	.outputEnable_o(),
-	.functionalUnitCode_o(),
-	.reg1WritebackEnable_o(), .reg2WritebackEnable_o(),
-	.reg1WritebackAddress_o(), .reg2WritebackAddress_o(),
-	.reg1WritebackVal_o(), .reg2WritebackVal_o()
+	.outputEnable_o(LSOutputEnable),
+	.functionalUnitCode_o(LSFunctionalUnitCode),
+	.reg1WritebackEnable_o(LSReg1WritebackEnable), .reg2WritebackEnable_o(LSReg2WritebackEnable),
+	.reg1WritebackAddress_o(LSReg1WritebackAddress), .reg2WritebackAddress_o(LSReg2WritebackAddress),
+	.reg1WritebackVal_o(LSReg1WritebackValue), .reg2WritebackVal_o(LSReg2WritebackValue)
 	);
 
+	//writeback merge queue
+	
 
 
 endmodule
