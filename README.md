@@ -1,7 +1,7 @@
 # Power_ISA CPU
 This project is for my Masters Dissertation. Documentation will be provided in the form of my Dissertation report (essentially a report describing the design, development and operations of the processor)
 
-#TODO:
+TODO:
 High priority
 New memory controller
 Expand functionality of the stall unit (allow load/stores to stall the CPU)
