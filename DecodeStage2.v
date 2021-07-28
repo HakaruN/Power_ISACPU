@@ -27,6 +27,7 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 	//DQ input
 	input wire dQEnable_i,
 	input wire [0:regWidth-1] dQReg1_i, dQReg2_i,
+	input wire [0:1] dQreg1Use_i, dQreg2Use_i,
 	input wire [0:DQimmWidth-1] dQImm_i,
 	input wire [0:2] dQfunctionalUnitCode_i,
 	input wire dQBit_i,
@@ -124,6 +125,7 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 			xOpcodeEnable_o <= 0;
 			//reg
 			reg1_o <= dQReg1_i; reg2_o <= dQReg2_i;
+			reg1Use_o <= dQreg1Use_i; reg2Use_o <= dQreg2Use_i; reg3Use_o<= 0;
 			reg1Enable_o <= 1; reg2Enable_o <= 1; reg3Enable_o <= 0;
 			reg2ValOrZero <= 1; reg3IsImmediate_o <= 0;
 			//imm

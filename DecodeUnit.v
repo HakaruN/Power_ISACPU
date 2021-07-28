@@ -84,6 +84,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	);	
 	
 	wire [0:regWidth-1] DQReg1, DQReg2;
+	wire [0:1] DQReg1Use, DQReg2Use;
 	wire [0:11] DQImm;
 	wire DQBit1;
 	wire DQEnable;
@@ -102,6 +103,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	.stall_o(stall_o[1]),
 	//data out
 	.reg1_o(DQReg1), .reg2_o(DQReg2),
+	.reg1Use_o(DQReg1Use), .reg2Use_o(DQReg2Use),
 	.imm_o(DQImm),
 	.bit_o(DQBit1),
 	//functional unit code
@@ -162,11 +164,12 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	.enable_o(XEnable)
 	);	
 	
+	//MD
 	wire [0:regWidth-1] MDReg1, MDReg2, MDReg3;
 	wire [0:5] MDImm;
 	wire MDBit1, MDBit2;
 	wire MDEnable;
-	wire [0:2] MDfunctionalUnitCode;
+	wire [0:2] mDfunctionalUnitCode;
 	MDFormatDecoder #(.opcodeWidth(opcodeWidth), .regWidth(regWidth), .immWidth(6), .instructionWidth(instructionWidth))
 	mDFormatDecoder(
 	.clock_i(clock_i),
@@ -180,7 +183,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	.imm_o(MDImm),
 	.bit1_o(MDBit1), .bit2_o(MDBit2),
 	//functional unit code
-	.functionalUnitCode_o(MDfunctionalUnitCode),
+	.functionalUnitCode_o(mDfunctionalUnitCode),
 	//enable
 	.enable_o(MDEnable)
 	);	
@@ -191,7 +194,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	wire XOBit1, XOBit2;
 	wire XOEnable;
 	wire [0:2] XOfunctionalUnitCode;
-	XOFormatDecoder #( .opcodeWidth(opcodeWidth), .xOpCodeWidth(10), .regWidth(regWidth), .instructionWidth(instructionWidth))
+	XOFormatDecoder #( .opcodeWidth(opcodeWidth), .XoOpCodeWidth(9), .regWidth(regWidth), .instructionWidth(instructionWidth))
 	xOFormatDecoder(
 	//command
 	.clock_i(clock_i),
@@ -234,6 +237,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//DQ input
 	.dQEnable_i(DQEnable),
 	.dQReg1_i(DQReg1), .dQReg2_i(DQReg2),
+	.dQreg1Use_i(DQReg1Use), .dQreg2Use_i(DQReg2Use),
 	.dQImm_i(DQImm),
 	.dQfunctionalUnitCode_i(DQfunctionalUnitCode),
 	.dQBit_i(DQBit1),

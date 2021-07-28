@@ -2,8 +2,9 @@
 //////////////////////////////////////////////////////////////////////////////////
 //Implements all DQ instructions in the PowerISE 3.0B
 //////////////////////////////////////////////////////////////////////////////////
-module DQFormatDecoder#( parameter opcodeWidth = 6, parameter regWidth = 5, parameter immWidth = 12, parameter instructionWidth = 32,
-parameter signedImm = 1, parameter unsignedImm = 0, parameter regImm = 0, parameter regRead = 1, parameter regWrite = 2, parameter regReadWrite = 3,
+module DQFormatDecoder#( parameter opcodeWidth = 6, parameter regWidth = 5, parameter immWidth = 16, parameter instructionWidth = 32,
+parameter signedImm = 1, parameter unsignedImm = 0,
+parameter regImm = 0, parameter regRead = 1, parameter regWrite = 2, parameter regReadWrite = 3,//REG USE
 parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, parameter BranchUnitCode = 3, parameter TrapUnitCode = 4//functional unit code/ID used for dispatch
 )(
 	//command in
@@ -28,7 +29,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		if(instruction_i[0:opcodeWidth-1] == 56 && enable_i == 1)
 		begin $display("Load Quadword");
 			reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15];
-			reg1Use_o <= 
+			reg1Use_o <= regWrite; reg2Use_o <= regRead;
 			imm_o <= instruction_i[16:27];
 			enable_o <= 1; stall_o <= 0;
 			functionalUnitCode_o <= LdStUnitCode;
@@ -38,6 +39,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 			case(instruction_i[29:31])
 			1: begin $display("Load VSX Vector");
 				reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15];
+				reg1Use_o <= regWrite; reg2Use_o <= regRead;
 				imm_o <= instruction_i[16:27];
 				bit_o <= instruction_i[28];
 				enable_o <= 1; stall_o <= 0;

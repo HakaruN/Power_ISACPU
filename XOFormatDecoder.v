@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 //Parses all XO format instructions in the POWER ISA 3.0B instruction set
 //////////////////////////////////////////////////////////////////////////////////
-module XOFormatDecoder#( parameter opcodeWidth = 6, parameter xOpCodeWidth = 9, parameter regWidth = 5, parameter instructionWidth = 32,
+module XOFormatDecoder#( parameter opcodeWidth = 6, parameter XoOpCodeWidth = 9, parameter regWidth = 5, parameter instructionWidth = 32,
 parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, parameter BranchUnitCode = 3, parameter TrapUnitCode = 4//functional unit code/ID used for dispatch
 )(
 	//command in
@@ -14,7 +14,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	output reg stall_o,
 	//data out
 	output reg [0:regWidth-1] reg1_o, reg2_o, reg3_o,
-	output reg [0:xOpCodeWidth-1]xOpCode_o,
+	output reg [0:XoOpCodeWidth-1]xOpCode_o,
 	output reg bit1_o, bit2_o,
 	output reg [0:2] functionalUnitCode_o,
 	output reg enable_o
