@@ -6,10 +6,10 @@
 //////////////////////////////////////////////////////////////////////////////////
 module StallUnit(
     input clock_i,
-    input reset_i,
 	 //stall inputs
 	 input wire fetchCacheMissStall_i,
 	 input wire regFileStall_i,
+	 //input wire storeStall_i,//
 	 
 	 //output reg output stall lines
 	 output reg fetchFullStall_o,
@@ -18,16 +18,23 @@ module StallUnit(
 
 	always @(negedge clock_i)
 	begin
-	
 		if(fetchCacheMissStall_i == 1)//check for a stall due to cache miss
 		begin
-			$display("Stalling on cache miss");
+			//$display("Stalling on cache miss");
 			fetchTagQueryStall_o <= 1;
 		end
 		else
 		begin
 			fetchFullStall_o <= 0;
 			fetchTagQueryStall_o <= 0;
+		end
+		
+		if(regFileStall_i == 1)//check to see if the reg file needs to stall the earlier pipeline stages (decode, fetch)
+		begin
+			fetchFullStall_o <= 1;
+		end
+		else
+		begin
 		end
 	end
 

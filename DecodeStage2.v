@@ -18,6 +18,7 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 	//D input
 	input wire dEnable_i,
 	input wire [0:regWidth-1] dReg1_i, dReg2_i,
+	input wire [0:1] dreg1Use_i, dreg2Use_i,
 	input wire [0:DImmWidth-1] dImm_i,
 	input wire dImmFormat_i,
 	input wire dReg2ValOrZero_i,
@@ -59,6 +60,7 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 	output reg [0:DImmWidth-1] imm_o,//use DImmWidth as the width as this is the largest imm format posible in this ISA version
 	output reg immEnable_o,
 	output reg [0:regWidth-1] reg1_o, reg2_o, reg3_o,
+	output reg [0:1] reg1Use_o, reg2Use_o, reg3Use_o,
 	output reg reg1Enable_o, reg2Enable_o, reg3Enable_o,
 	output reg reg3IsImmediate_o,
 	output reg bit1_o, bit2_o,
@@ -88,6 +90,7 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 			reg1Enable_o <= 1; reg2Enable_o <= 1; reg3Enable_o <= 0;
 			reg2ValOrZero <= dReg2ValOrZero_i; reg3IsImmediate_o <= 0;
 			functionalUnitCode_o <= dfunctionalUnitCode_i;
+			reg1Use_o <= dreg1Use_i; reg2Use_o <= dreg2Use_i; reg3Use_o<= 0;
 			//imm
 			immEnable_o <= 1;
 			if(dImmFormat_i == 1)

@@ -24,10 +24,11 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	);
 
 	always @(posedge clock_i)
-	begin
+	begin//TODO: Check if reg1 is odd or ==reg 2, if so then throw an error
 		if(instruction_i[0:opcodeWidth-1] == 56 && enable_i == 1)
 		begin $display("Load Quadword");
 			reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15];
+			reg1Use_o <= 
 			imm_o <= instruction_i[16:27];
 			enable_o <= 1; stall_o <= 0;
 			functionalUnitCode_o <= LdStUnitCode;

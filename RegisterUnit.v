@@ -32,8 +32,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//reg reads - these are there to stop the compiler optimising all of the hardware away
 	input wire [0:4] regReadAddress_i,
 	input wire regReadEnable_i,
-	output reg [0:addressSize-1] regReadOutput_o,
-	
+	output reg [0:addressSize-1] regReadOutput_o,	
 	//data in (reg writeback)
 	input wire [0:2] regWritebackFunctionalUnitCode_i,
 	input wire [0:addressSize-1] reg1WritebackData_i, reg2WritebackData_i,
@@ -257,7 +256,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		//reg writeback
 		if(reset_i == 0)
 		begin			
-			case(functionalUnitCode_i)
+			case(regWritebackFunctionalUnitCode_i)
 				//Fixed point writeback
 				FXUnitCode: begin
 					//$display("Load store writeback");

@@ -171,6 +171,9 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	wire [0:regWidth-1] ExecReg1WritebackAddress, ExecReg2WritebackAddress;
 	wire [0:63] ExecReg1WritebackVal, ExecReg2WritebackVal;
 	
+	//regfile stall
+	wire regFileStallOut;
+	
 	//Register unit
 	RegisterUnit registerUnit (
     .clock_i(clock_i), 
@@ -201,7 +204,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
     .reg1isWriteback_i(ExecReg1WritebackEnable), .reg2isWriteback_i(ExecReg2WritebackEnable), 
 	 .reg1WritebackAddress_i(ExecReg1WritebackAddress), .reg2WritebackAddress_i(ExecReg2WritebackAddress),	 
 	 //command out
-    .stall_o(stall_o), 
+    .stall_o(regFileStallOut), 
 	 //reg read out
 	 .enable_o(RegOutEnable),
 	 .is64Bit_o(RegOutis64Bit),
@@ -251,6 +254,8 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 
 	//stall unit
 	StallUnit stallUnit(
+		//control
+		.clock_i(clock_i),
 		//stall inputs
 		.fetchCacheMissStall_i(isCacheMiss),
 		.regFileStall_i(),//TODO: Implement a reg unit stall line

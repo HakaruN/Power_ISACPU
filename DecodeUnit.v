@@ -52,6 +52,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	
 	///Stage 1 - parallel decoders:
 	wire [0:regWidth-1] DReg1, DReg2;
+	wire [0:1] DReg1Use, DReg2Use;
 	wire [0:15] DImm;
 	wire DReg2ValOrZero;
 	wire DImmFormat;//0 = unsignedImm, 1 = signedImm (sign extended to 64b down the pipe)
@@ -71,6 +72,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	.stall_o(stall_o[0]),
 	//data out
 	.reg1_o(DReg1), .reg2_o(DReg2),
+	.reg1Use_o(DReg1Use), .reg2Use_o(DReg2Use),
 	.reg2ValOrZero_o(DReg2ValOrZero),
 	.imm_o(DImm),
 	.immFormat_o(DImmFormat),
@@ -265,6 +267,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	.imm_o(imm_o),
 	.immEnable_o(immEnable_i),
 	.reg1_o(reg1_o), .reg2_o(reg2_o), .reg3_o(reg3_o),
+	.reg1Use_o(reg1Use_o), .reg2Use_o(reg2Use_o), .reg3Use_o(reg3Use_o),
 	.reg1Enable_o(reg1Enable_o), .reg2Enable_o(reg2Enable_o), .reg3Enable_o(reg3Enable_o),
 	.reg3IsImmediate_o(reg3IsImmediate_o),
 	.bit1_o(bit1_o), .bit2_o(bit2_o),
