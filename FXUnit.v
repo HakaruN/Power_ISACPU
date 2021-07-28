@@ -24,7 +24,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire enable_i,
 	//data in
 	input wire is64Bit_i,
-	input wire [0:1] functionalUnitCode_i,
+	input wire [0:2] functionalUnitCode_i,
 	input wire [0:63] operand1_i, operand2_i, operand3_i,
 	input wire [0:regWidth-1] reg1Address_i, reg2Address_i, reg3Address_i,
 	input wire [0:immWith-1] imm_i,
@@ -37,7 +37,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire xOpCodeEnabled_i,	
 	input wire [0:formatIndexRange-1] instructionFormat_i,
 	//outputs
-	output reg [0:1] functionalUnitCode_o,
+	output reg [0:2] functionalUnitCode_o,
 	output reg reg1WritebackEnable_o, reg2WritebackEnable_o,//reg2 enable condition reg writeEnable
 	output reg [0:5] reg1WritebackAddress_o, reg2WritebackAddress_o,//reg2 address is used to write back the condition reg bits
 	output reg [0:63] reg1WritebackVal_o, reg2WritebackVal_o//reg2 val is overflow/underflow bits	

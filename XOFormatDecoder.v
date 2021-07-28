@@ -16,7 +16,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	output reg [0:regWidth-1] reg1_o, reg2_o, reg3_o,
 	output reg [0:xOpCodeWidth-1]xOpCode_o,
 	output reg bit1_o, bit2_o,
-	output reg [0:1] functionalUnitCode_o,
+	output reg [0:2] functionalUnitCode_o,
 	output reg enable_o
 	);
 
@@ -27,7 +27,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 			xOpCode_o <= instruction_i[22:30];
 			bit1_o <= instruction_i[21]; bit2_o <= instruction_i[31];
 			reg1_o <= instruction_i[6:10]; reg2_o <= instruction_i[11:15]; reg3_o <= instruction_i[16:20];
-			case(instruction_i[22+:xOpCodeWidth])
+			case(instruction_i[22:30])
 				266: begin $display("Add");	
 					enable_o <= 1; stall_o <= 0;
 					functionalUnitCode_o <= FXUnitCode;

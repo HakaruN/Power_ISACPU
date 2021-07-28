@@ -17,7 +17,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//from reg read
 	input wire enable_i,
 	input wire is64Bit_i,
-	input wire [0:1] functionalUnitCode_i,
+	input wire [0:2] functionalUnitCode_i,
 	input wire [0:63] operand1_i, operand2_i, operand3_i,
 	input wire [0:regWidth-1] reg1Address_i, reg2Address_i, reg3Address_i,
 	input wire [0:immWith-1] imm_i,
@@ -33,14 +33,14 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//command out
 	output wire loadStoreStall, output wire branchStall,
 	//reg writebacks
-	output wire [0:1] functionalUnitCode_o,
+	output wire [0:2] functionalUnitCode_o,
 	output wire reg1WritebackEnable_o, reg2WritebackEnable_o,
 	output wire [0:5] reg1WritebackAddress_o, reg2WritebackAddress_o,
 	output wire [0:63] reg1WritebackVal_o, reg2WritebackVal_o
 );
 	
 	wire FXOutputEnable;
-	wire [0:1] FXFunctionalUnitCode;
+	wire [0:2] FXFunctionalUnitCode;
 	wire FXRegWritebackEnable, FXCondRegUpdateEnable;
 	wire [0:regWidth-1] FXReg1WritebackAddress, FXCondRegBits;
 	wire [0:addressSize-1] FXReg1WritebackValue, FXOverFlowUnderFlow;
@@ -73,7 +73,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	
 	
 	wire LSOutputEnable;
-	wire [0:1] LSFunctionalUnitCode;
+	wire [0:2] LSFunctionalUnitCode;
 	wire LSReg1WritebackEnable, LSReg2WritebackEnable;
 	wire [0:regWidth-1] LSReg1WritebackAddress, LSReg2WritebackAddress;
 	wire [0:addressSize-1] LSReg1WritebackValue, LSReg2WritebackValue;

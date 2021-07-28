@@ -184,7 +184,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	);	
 	
 	//XO
-	wire [0:XoOpcodeWidth-1] XOopCode;
+	wire [0:8] XOopCode;
 	wire [0:regWidth-1] XOReg1, XOReg2, XOReg3;
 	wire XOBit1, XOBit2;
 	wire XOEnable;
@@ -200,7 +200,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	.stall_o(stall_o[5]),
 	//data out
 	.reg1_o(XOReg1), .reg2_o(XOReg2), .reg3_o(XOReg3),
-	.xOpCode_o(XOopCode),
+	.xOpCode_o(XOopCode),	
 	.bit1_o(XOBit1), .bit2_o(XOBit2),
 	//functional unit code
 	.functionalUnitCode_o(XOfunctionalUnitCode),

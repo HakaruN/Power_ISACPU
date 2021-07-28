@@ -16,18 +16,18 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		input wire clock_i,
 		input wire reset_i,
 		//FX unit in
-		input wire [0:1] FXFunctionalUnitCode_i,
+		input wire [0:2] FXFunctionalUnitCode_i,
 		input wire FXRegWritebackEnable_i, FXCondRegUpdateEnable_i,
 		input wire [0:regWidth-1] FXReg1WritebackAddress_i, FXCondRegBits_i,
 		input wire [0:addressSize-1] FXReg1WritebackValue_i, FXOverFlowUnderFlow_i,
 		//LS unit in
-		input wire [0:1] LSFunctionalUnitCode_i,
+		input wire [0:2] LSFunctionalUnitCode_i,
 		input wire LSReg1WritebackEnable_i, LSReg2WritebackEnable_i,
 		input wire [0:regWidth-1] LSReg1WritebackAddress_i, LSReg2WritebackAddress_i,
 		input wire [0:addressSize-1] LSReg1WritebackValue_i, LSReg2WritebackValue_i,
 		//TODO: FP unit
 		//outputs
-		output reg [0:1] functionalUnitCode_o,
+		output reg [0:2] functionalUnitCode_o,
 		output reg reg1WritebackEnable_o, reg2WritebackEnable_o,//reg2 enable condition reg writeEnable
 		output reg [0:5] reg1WritebackAddress_o, reg2WritebackAddress_o,//reg2 address is used to write back the condition reg bits
 		output reg [0:63] reg1WritebackVal_o, reg2WritebackVal_o//reg2 val is overflow/underflow bits	

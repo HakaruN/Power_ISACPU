@@ -27,7 +27,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire [0:opcodeWidth-1] opCode_i,
 	input wire [0:xOpCodeWidth-1] xOpcode_i,
 	input wire xOpCodeEnabled_i,
-	input wire [0:1] functionalUnitCode_i,
+	input wire [0:2] functionalUnitCode_i,
 	input wire [0:formatIndexRange-1] instructionFormat_i,
 	//data in (reg writeback)
 	input wire [0:2] regWritebackFunctionalUnitCode_i,
@@ -51,7 +51,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	output reg [0:opcodeWidth-1] opCode_o,
 	output reg [0:xOpCodeWidth-1] xOpCode_o,
 	output reg xOpCodeEnabled_o,
-	output reg [0:1] functionalUnitCode_o,
+	output reg [0:2] functionalUnitCode_o,
 	output reg [0:formatIndexRange-1] instructionFormat_o
 	);
 	integer i;

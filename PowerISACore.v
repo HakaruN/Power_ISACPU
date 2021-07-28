@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, parameter iMemoryAddressSize = 16, parameter instructionSize = 32,
-parameter regImm = 0, parameter immWith = 16,
+parameter regImm = 0, parameter immWith = 16, parameter DImmWith = 16,
 parameter iCacheOffsetSize = 5, iCacheIndexSize = 8, iCacheTagSize = addressSize - (iCacheOffsetSize + iCacheIndexSize), parameter blockSize = 256,	
 parameter formatIndexRange = 5, parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, parameter immWidth = 16,
 parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, parameter BranchUnitCode = 3, parameter TrapUnitCode = 4//functional unit code/ID used for dispatch
@@ -94,7 +94,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//decode output
 	wire [0:5] decodeStall;
 	wire decodeEnable;
-	wire [0:63] decodeImm;
+	wire [0: DImmWith -1] decodeImm;
 	wire decodeImmEnable;
 	wire [0:regWidth-1] decodeReg1, decodeReg2, decodeReg3;
 	wire [0:1] reg1Use, reg2Use, reg3Use;
@@ -107,7 +107,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	wire [0:opcodeWidth-1] decodeOpCode;
 	wire [0:xOpCodeWidth-1] decodeXOpcode;
 	wire decodeXOpCodeEnabled;
-	wire [0:1] decodeFunctionalUnitCode;
+	wire [0:2] decodeFunctionalUnitCode;
 	wire [0:formatIndexRange-1] decodeInstructionFormat;
 	DecodeUnit #(
 	.instructionWidth(instructionSize), .addressSize(addressSize), .formatIndexRange(formatIndexRange),
@@ -155,14 +155,14 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	wire [0:opcodeWidth-1] RegOutOpCode;
 	wire [0:xOpCodeWidth-1] RegOutXOpCode;
 	wire RegOutXOpCodeEnabled;
-	wire [0:1] RegOutFunctionalUnitCode;
+	wire [0:2] RegOutFunctionalUnitCode;
 	wire [0:formatIndexRange-1] RegOutInstructionFormat;
 	wire RegOutis64Bit;
 
 	//functional unit outputs (reg writeback)
 	wire ExecLoadStoreStallOut;
 	wire ExecBranchStallOut;
-	wire [0:1] ExecFunctionalUnitCodeOut;
+	wire [0:2] ExecFunctionalUnitCodeOut;
 	wire ExecReg1WritebackEnable, ExecReg2WritebackEnable;
 	wire [0:5] ExecReg1WritebackAddress, ExecReg2WritebackAddress;
 	wire [0:63] ExecReg1WritebackVal, ExecReg2WritebackVal;
