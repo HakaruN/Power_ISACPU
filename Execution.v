@@ -35,7 +35,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//reg writebacks
 	output wire [0:2] functionalUnitCode_o,
 	output wire reg1WritebackEnable_o, reg2WritebackEnable_o,
-	output wire [0:5] reg1WritebackAddress_o, reg2WritebackAddress_o,
+	output wire [0:regWidth-1] reg1WritebackAddress_o, reg2WritebackAddress_o,
 	output wire [0:63] reg1WritebackVal_o, reg2WritebackVal_o
 );
 	

@@ -95,22 +95,22 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 				FXPendingWritebackTab[i] <= 0;
 				FXRegFile[i] <= 0;
 			end
-			$display("Resetting reg file");
+			//$display("Resetting reg file");
 		end
 		//perform reg reads
 		else if(enable_i == 1)
 		begin
-			$display("Reg read");
-			$display("Reading reg's %d, %d, %d", reg1_i, reg2_i, reg3_i);
-			$display("isPending writeback: %d, %d, %d", FXPendingWritebackTab[reg1_i], FXPendingWritebackTab[reg2_i], FXPendingWritebackTab[reg3_i]);
-			$display("reg's use: %d, %d, %d (regImm = 0, regRead = 1, regWrite = 2, regReadWrite = 3)",reg1Use_i, reg2Use_i, reg3Use_i);
+			//$display("Reg read");
+			//$display("Reading reg's %d, %d, %d", reg1_i, reg2_i, reg3_i);
+			//$display("isPending writeback: %d, %d, %d", FXPendingWritebackTab[reg1_i], FXPendingWritebackTab[reg2_i], FXPendingWritebackTab[reg3_i]);
+			//$display("reg's use: %d, %d, %d (regImm = 0, regRead = 1, regWrite = 2, regReadWrite = 3)",reg1Use_i, reg2Use_i, reg3Use_i);
 				
 			//if any registers are pending a writeback, we must stall and can't enable the outputs until the registers are available to read from
 			if(FXPendingWritebackTab[reg1_i] == 1 || FXPendingWritebackTab[reg2_i] == 1 || FXPendingWritebackTab[reg3_i] == 1)
 			begin
 				enable_o <= 0;
 				stall_o <= 1;
-				$display("Reg pending writeback collision");
+				//$display("Reg pending writeback collision");
 			end
 			else
 			begin
@@ -167,13 +167,13 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 					
 				if(reg2Enable_i == 1)
 				begin
-					$display("Reg 2 enabled");
+					//$display("Reg 2 enabled");
 					if(reg2ValOrZero_i == 1)
 					begin
-						$display("reg2ValorZero = 1");
+						//$display("reg2ValorZero = 1");
 						if(reg2_i == 0)//reg2 val or zero == 1 and reg2 == 0
 						begin
-							$display("Reg 2 is zero");
+							//$display("Reg 2 is zero");
 							operand2_o <= 0;	
 								case(reg2Use_i)
 									0:begin operand2_o <=0; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = imm
@@ -184,7 +184,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 						end
 						else//reg2 val or zero == 1 and reg2 != 0
 						begin
-							$display("Reg 2 is not zero");
+							//$display("Reg 2 is not zero");
 							case(reg2Use_i)
 								0:begin operand2_o <= reg2_i; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = imm
 								1:begin operand2_o <= FXRegFile[reg2_i]; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = read
@@ -195,7 +195,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 					end
 					else
 					begin//reg2 val or zero == 0
-						$display("reg2ValorZero = 0");
+						//$display("reg2ValorZero = 0");
 						case(reg2Use_i)
 							0:begin operand2_o <= reg2_i; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = imm
 							1:begin operand2_o <= FXRegFile[reg2_i]; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = read
@@ -208,7 +208,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 				else
 				begin
 					operand2Enable_o <= 0;
-					$display("reg2 disabled");
+					//$display("reg2 disabled");
 				end
 				
 				if(reg3Enable_i == 1)
@@ -247,10 +247,10 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 			case(functionalUnitCode_i)
 				//Fixed point writeback
 				FXUnitCode: begin
-					$display("Load store writeback");
+					//$display("Load store writeback");
 					if(reg1isWriteback_i == 1)
 					begin
-						$display("reg 1 writeback. Writing %d to reg %d", reg1WritebackData_i, reg1WritebackAddress_i);
+						//$display("reg 1 writeback. Writing %d to reg %d", reg1WritebackData_i, reg1WritebackAddress_i);
 						FXRegFile[reg1WritebackAddress_i] <= reg1WritebackData_i;
 						FXPendingWritebackTab[reg1WritebackAddress_i] <= 0;//reset the iswritebackpending flag for the register
 						is64Bit <= is64Bit_i;
@@ -267,17 +267,17 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 				
 				//Load Store writeback
 				LdStUnitCode: begin
-					$display("Load store writeback");
+					//$display("Load store writeback");
 					if(reg1isWriteback_i == 1)
 					begin
-						$display("reg 1 writeback. Writing %d to reg %d", reg1WritebackData_i, reg1WritebackAddress_i);
+						//$display("reg 1 writeback. Writing %d to reg %d", reg1WritebackData_i, reg1WritebackAddress_i);
 						FXRegFile[reg1WritebackAddress_i] <= reg1WritebackData_i;
 						FXPendingWritebackTab[reg1WritebackAddress_i] <= 0;//reset the iswritebackpending flag for the register
 						is64Bit <= is64Bit_i;
 					end
 					if(reg2isWriteback_i == 1)
 					begin
-						$display("reg 2 writeback. Writing %d to reg %d", reg2WritebackData_i, reg2WritebackAddress_i);
+						//$display("reg 2 writeback. Writing %d to reg %d", reg2WritebackData_i, reg2WritebackAddress_i);
 						FXRegFile[reg2WritebackAddress_i] <= reg2WritebackData_i;
 						FXPendingWritebackTab[reg2WritebackAddress_i] <= 0;
 						is64Bit <= is64Bit_i;

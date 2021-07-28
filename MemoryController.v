@@ -77,8 +77,8 @@ parameter databusWidth = 32, parameter iMemoryAddressSize = 16,
 		//stage 1
 		if(requestEnable_i == 1)
 		begin
-			$display("Memory operation requested from CPU");
-			$display("Memory block requested: %b, isWrite: %b", address_i[(addressSize-offsetSize)-:iMemoryAddressSize], isMemWrite_i);
+			//$display("Memory operation requested from CPU");
+			//$display("Memory block requested: %b, isWrite: %b", address_i[(addressSize-offsetSize)-:iMemoryAddressSize], isMemWrite_i);
 			///tell the memory of the request:
 			//Memory operations:			
 			address_o <= (address_i[(addressSize-offsetSize)-:iMemoryAddressSize]);//16b address bus takes the index (8b) and bottom of the tag (8bs) and returns a 256b block. This gives us a 16MiB memory range
@@ -101,12 +101,12 @@ parameter databusWidth = 32, parameter iMemoryAddressSize = 16,
 		//stage 2
 		if(isMemoryEngaged == 1)//were doing a memory operation)
 		begin
-			$display("Memory is engaged");
-			$display("Working on block index: %d", blockIndex);
+			//$display("Memory is engaged");
+			//$display("Working on block index: %d", blockIndex);
 			blockIndex <= blockIndex + 1;//increment the block index so next time the block index will point to the next word
 			if(isWrite == 1)//if were writing
 			begin//write to the queue
-				$display("Writing %h to memory at address %h", memoryBlockWriteBuffer[(0 * databusWidth)+:databusWidth], operatingAddress[(addressSize-offsetSize)-:iMemoryAddressSize]);
+				//$display("Writing %h to memory at address %h", memoryBlockWriteBuffer[(0 * databusWidth)+:databusWidth], operatingAddress[(addressSize-offsetSize)-:iMemoryAddressSize]);
 				case(blockIndex)//put the word from the fetch buffer indicated by the blockIndex into the dataBusRegister (input of the write queue)
 					0:dataBusWriteRegister <= memoryBlockWriteBuffer[(0 * databusWidth)+:databusWidth];
 					1:dataBusWriteRegister <= memoryBlockWriteBuffer[(1 * databusWidth)+:databusWidth];
@@ -120,7 +120,7 @@ parameter databusWidth = 32, parameter iMemoryAddressSize = 16,
 			end
 			else//were reading
 			begin//read from queue
-				$display("Reading %h from memory at address %h", dataBusReadRegister, operatingAddress[(addressSize-offsetSize)-:iMemoryAddressSize]);
+				//$display("Reading %h from memory at address %h", dataBusReadRegister, operatingAddress[(addressSize-offsetSize)-:iMemoryAddressSize]);
 				case(blockIndex)//put the word in the dataBusRegister indicated by the blockIndex into the fetch buffer (input of the read queue)
 					0:memoryBlockReadBuffer[(0 * databusWidth)+:databusWidth] <= dataBusReadRegister;
 					1:memoryBlockReadBuffer[(1 * databusWidth)+:databusWidth] <= dataBusReadRegister;
@@ -131,12 +131,12 @@ parameter databusWidth = 32, parameter iMemoryAddressSize = 16,
 					6:memoryBlockReadBuffer[(6 * databusWidth)+:databusWidth] <= dataBusReadRegister;
 					7:memoryBlockReadBuffer[(7 * databusWidth)+:databusWidth] <= dataBusReadRegister;
 				endcase
-				$display("Reading at block index %d", blockIndex);
+				//$display("Reading at block index %d", blockIndex);
 			end
 			
 			if((blockIndex == 4'b1000))//were at the end of the block, lets finnish up
 			begin
-				$display("Memory operation complete");
+				//$display("Memory operation complete");
 				//isBlockValid <= 0;//unset block valid
 				isMemoryEngaged <= 0;
 				blockOutEnable_o <= 1;

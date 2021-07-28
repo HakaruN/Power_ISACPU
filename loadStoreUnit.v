@@ -32,7 +32,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//data out
 	output reg [0:2] functionalUnitCode_o,
 	output reg reg1WritebackEnable_o, reg2WritebackEnable_o,
-	output reg [0:5] reg1WritebackAddress_o, reg2WritebackAddress_o,
+	output reg [0:regWidth-1] reg1WritebackAddress_o, reg2WritebackAddress_o,
 	output reg [0:63] reg1WritebackVal_o, reg2WritebackVal_o
     );
 
@@ -407,6 +407,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	always @(posedge clock_i)
 	begin
 		//reset the data memory
+		/*
 		if(reset_i == 1)
 		begin
 			for(blockIdx = 0; blockIdx < 128; blockIdx = blockIdx + 1)
@@ -415,7 +416,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 			end
 		end
 		//commit's the block to memory
-		else if(isCommit == 1)
+		else*/ if(isCommit == 1)
 		begin
 			dataMemory[(commitAddress / memoryBlockSize)] <= commitBlock;
 		end

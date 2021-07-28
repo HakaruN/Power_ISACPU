@@ -164,7 +164,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	wire ExecBranchStallOut;
 	wire [0:2] ExecFunctionalUnitCodeOut;
 	wire ExecReg1WritebackEnable, ExecReg2WritebackEnable;
-	wire [0:5] ExecReg1WritebackAddress, ExecReg2WritebackAddress;
+	wire [0:regWidth-1] ExecReg1WritebackAddress, ExecReg2WritebackAddress;
 	wire [0:63] ExecReg1WritebackVal, ExecReg2WritebackVal;
 	
 	//Register unit
