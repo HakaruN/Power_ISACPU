@@ -16,3 +16,4 @@ Implementation Status Notes:
 Transfer 4 bytes per cycle, takes a 16b address and fetches a 32 byte block of memory over 8 cycles.
 
 -Condition register is unused at this time as there is no branch unit.
+-FixedPoint Unit Exception register is unused so far.
