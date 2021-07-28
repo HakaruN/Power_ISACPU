@@ -8,3 +8,10 @@ Expand functionality of the stall unit (allow load/stores to stall the CPU)
 Implement branch unit
 Add L1D-cache to the Load/Store unit and implemenent Data memory controller.
 Implement All instructions currently supported by the decoders into the functional units (that are possible withought microcode)
+
+
+Implementation Status Notes:
+-Instruction memory controller needs rewriting from scratch. Implementation Is to:
+Transfer 4 bytes per cycle, takes a 16b address and fetches a 32 byte block of memory over 8 cycles.
+
+-Condition register is unused at this time as there is no branch unit.
