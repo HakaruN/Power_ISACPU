@@ -13,7 +13,7 @@ parameter A = 1, parameter B = 2, parameter D = 3, parameter DQ = 4, parameter D
 parameter MD = 9, parameter MDS = 10, parameter SC = 11, parameter VA = 12, parameter VC = 13, parameter VX = 14, parameter X = 15, parameter XFL = 16,
 parameter XFX = 17, parameter XL = 18, parameter XO = 19, parameter XS = 20, parameter XX2 = 21, parameter XX3 = 22, parameter XX4 = 23, parameter Z22 = 24,
 parameter Z23 = 25, parameter INVALID = 0,
-parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter XoOpcodeWidth = 9, parameter regWidth = 5, parameter immWidth = 16,
+parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter XoOpCodeWidth = 9, parameter regWidth = 5, parameter immWidth = 16,
 parameter DSImmWidth = 14, parameter DImmWith = 16, parameter DQImmWidth = 12, parameter MDImmWidth = 6,
 parameter regImm = 0, parameter regRead = 1, parameter regWrite = 2, parameter regReadWrite = 3,//indicates if a registers use is immediate, read, write or both
 parameter numStallLines = 6,//should be the number of format specific decoders in the decode unit
@@ -184,7 +184,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	);	
 	
 	//XO
-	wire [0:8] XOopCode;
+	wire [0:XoOpCodeWidth-1] XOopCode;
 	wire [0:regWidth-1] XOReg1, XOReg2, XOReg3;
 	wire XOBit1, XOBit2;
 	wire XOEnable;
@@ -211,7 +211,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//Stage 2 - decoder output mux
 	DecodeStage2 #(.opcodeWidth(opcodeWidth),.regWidth(regWidth),.addressSize(addressSize),
 	.DImmWidth(16),.DQimmWidth(12),.DSimmWidth(14),.MDimmWidth(MDImmWidth),
-	.XxoOpcodeWidth(10),.XoOpCodeWidth(9),
+	.XxoOpcodeWidth(xOpCodeWidth),.XoOpCodeWidth(XoOpCodeWidth),
 	//instrcution format
 	.formatIndexRange(formatIndexRange),
 	.A(A),.B(B),.D(D),.DQ(DQ),.DS(DS),.DX(DX),.I(I),.M(M),.MD(MD),.MDS(MDS),.SC(SC),.VA(VA),.VC(VC),.VX(VX),.X(X),.XFL(XFL),

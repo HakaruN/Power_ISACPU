@@ -56,7 +56,7 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 	input wire xOit1_i, xOBit2_i,	
 	//outputs 
 	output reg enable_o,
-	output reg [0:63] imm_o,
+	output reg [0:DImmWidth-1] imm_o,//use DImmWidth as the width as this is the largest imm format posible in this ISA version
 	output reg immEnable_o,
 	output reg [0:regWidth-1] reg1_o, reg2_o, reg3_o,
 	output reg reg1Enable_o, reg2Enable_o, reg3Enable_o,
@@ -69,7 +69,7 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 	output reg [0:XxoOpcodeWidth-1]xOpcode_o,
 	output reg xOpcodeEnable_o,
 	output reg [0:2] functionalUnitCode_o,
-	output reg instructionFormat_o
+	output reg [0:formatIndexRange-1] instructionFormat_o
     );
 
 	always @(posedge clock_i)

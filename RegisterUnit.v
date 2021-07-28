@@ -29,6 +29,11 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire xOpCodeEnabled_i,
 	input wire [0:2] functionalUnitCode_i,
 	input wire [0:formatIndexRange-1] instructionFormat_i,
+	//reg reads - these are there to stop the compiler optimising all of the hardware away
+	input wire [0:4] regReadAddress_i,
+	input wire regReadEnable_i,
+	output reg [0:addressSize-1] regReadOutput_o,
+	
 	//data in (reg writeback)
 	input wire [0:2] regWritebackFunctionalUnitCode_i,
 	input wire [0:addressSize-1] reg1WritebackData_i, reg2WritebackData_i,
@@ -82,6 +87,14 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//reg file
 	reg [0:63] FXRegFile [0:numRegs-1];
 	
+	//just read the reg to the output
+	always @(posedge clock_i)
+	begin
+		if(regReadEnable_i == 1)
+		begin
+			regReadOutput_o <= FXRegFile[regReadAddress_i];
+		end
+	end
 	
 	always @(posedge clock_i)//negedge of clock reads
 	begin

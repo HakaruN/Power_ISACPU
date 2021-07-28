@@ -10,6 +10,10 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//command
 	input wire clock_i,
 	input wire reset_i,
+	//reg reads - these are there to stop the compiler optimising all of the hardware away
+	input wire [0:4] regReadAddress_i,
+	input wire regReadEnable_i,
+	output wire [0:addressSize-1] regReadOutput_o,
 	//I-memory updates (from memory)
 	input wire IMemClock_i,
 	input wire IMemEnable_i,
@@ -188,6 +192,9 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
     .xOpCodeEnabled_i(decodeXOpCodeEnabled), 
 	 .functionalUnitCode_i(decodeFunctionalUnitCode),
     .instructionFormat_i(decodeInstructionFormat), 
+	.regReadAddress_i(regReadAddress_i),
+	.regReadEnable_i(regReadEnable_i),
+	.regReadOutput_o(regReadOutput_o),
 	 //reg write in	
 	 .regWritebackFunctionalUnitCode_i(ExecFunctionalUnitCodeOut),
     .reg1WritebackData_i(ExecReg1WritebackVal), .reg2WritebackData_i(ExecReg2WritebackVal), 

@@ -365,25 +365,25 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 				storeByte: 
 				begin 
 					commitBlock <= storeBlock; 
-					commitBlock[(loadAddress % (memoryBlockSize/8)*8)+:8] <= storeVal[63-:8];
+					//commitBlock[(loadAddress % (memoryBlockSize/8)*8)+:8] <= storeVal[63-:8];
 					isCommit <= 1;
 				end//store 8b
 				storeHalfWord: 
 				begin 
 					commitBlock <= storeBlock; 
-					commitBlock[(loadAddress % (memoryBlockSize/8)*8)+:16] <= storeVal[63-:16];
+					//commitBlock[(loadAddress % (memoryBlockSize/8)*8)+:16] <= storeVal[63-:16];
 					isCommit <= 1;
 				end//store 16b
 				storeWord: 
 				begin
 					commitBlock <= storeBlock; 
-					commitBlock[(loadAddress % (memoryBlockSize/8)*8)+:32] <= storeVal[63-:32];
+					//commitBlock[(loadAddress % (memoryBlockSize/8)*8)+:32] <= storeVal[63-:32];
 					isCommit <= 1;
 				end//store 32b
 				storeDoubleWord: 
 				begin 
 					commitBlock <= storeBlock; 
-					commitBlock[(loadAddress % (memoryBlockSize/8)*8)+:64] <= storeVal[63-:64];
+					//commitBlock[(loadAddress % (memoryBlockSize/8)*8)+:64] <= storeVal[63-:64];
 					isCommit <= 1;
 				end//store 64b
 				storeQuadWord:
