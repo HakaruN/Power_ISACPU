@@ -1,6 +1,8 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 //Implements all DQ instructions in the PowerISE 3.0B
+//NOTE:
+//DQ doesn't need an immFormat as all of the imms are 12 bit sign extended to 16 bits which is implicitly done in the stage2 decoder
 //////////////////////////////////////////////////////////////////////////////////
 module DQFormatDecoder#( parameter opcodeWidth = 6, parameter regWidth = 5, parameter immWidth = 16, parameter instructionWidth = 32,
 parameter signedImm = 1, parameter unsignedImm = 0,
@@ -18,7 +20,6 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	output reg [0:regWidth-1] reg1_o, reg2_o,
 	output reg [0:1] reg1Use_o, reg2Use_o,//describes the operations to happen to the reg
 	output reg [0:immWidth-1] imm_o,
-	output reg immFormat_o,//0 = unsignedImm, 1 = signedImm (sign extended to 64b down the pipe)
 	output reg bit_o,
 	output reg [0:2] functionalUnitCode_o,
 	output reg enable_o
