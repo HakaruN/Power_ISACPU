@@ -265,5 +265,10 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	);
 	
 	//TODO implement exception unit
+	
+	always @(posedge clock_i)
+	begin
+		PC <= PC + 1;
+	end
 
 endmodule

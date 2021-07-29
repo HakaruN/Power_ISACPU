@@ -85,20 +85,13 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	reg FXPendingWritebackTab [0:31];
 	//reg file
 	reg [0:63] FXRegFile [0:numRegs-1];
+
 	
-	//just read the reg to the output
 	always @(posedge clock_i)
-	begin
-		if(regReadEnable_i == 1)
-		begin
-			regReadOutput_o <= FXRegFile[regReadAddress_i];
-		end
-	end
-	
-	always @(posedge clock_i)//negedge of clock reads
 	begin
 		if(reset_i == 1)
 		begin
+			enable_o <= 0;
 			stall_o <= 0;
 			is64Bit <= 1;//default to 64 bit mode
 			conditionRegister <= 0;
@@ -253,6 +246,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		else
 			enable_o <= 0;
 		
+		
 		//reg writeback
 		if(reset_i == 0)
 		begin			
@@ -304,5 +298,14 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		end
 	end
 	
+	
+	//just read the reg to the core's reg output
+	always @(posedge clock_i)
+	begin
+		if(regReadEnable_i == 1)
+		begin
+			regReadOutput_o <= FXRegFile[regReadAddress_i];
+		end
+	end
 	
 endmodule

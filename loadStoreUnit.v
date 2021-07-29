@@ -364,26 +364,26 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 			case(storeFormat)
 				storeByte: 
 				begin 
-					commitBlock <= storeBlock; 
-					//commitBlock[(loadAddress % (memoryBlockSize/8)*8)+:8] <= storeVal[63-:8];
+					commitBlock <= storeBlock; 					
+					commitBlock[(loadAddress * 8) % memoryBlockSize+:8] <= storeVal[63-:8];
 					isCommit <= 1;
 				end//store 8b
 				storeHalfWord: 
 				begin 
 					commitBlock <= storeBlock; 
-					//commitBlock[(loadAddress % (memoryBlockSize/8)*8)+:16] <= storeVal[63-:16];
+					commitBlock[(loadAddress % (memoryBlockSize/8)*8)+:16] <= storeVal[63-:16];
 					isCommit <= 1;
 				end//store 16b
 				storeWord: 
 				begin
 					commitBlock <= storeBlock; 
-					//commitBlock[(loadAddress % (memoryBlockSize/8)*8)+:32] <= storeVal[63-:32];
+					commitBlock[(loadAddress % (memoryBlockSize/8)*8)+:32] <= storeVal[63-:32];
 					isCommit <= 1;
 				end//store 32b
 				storeDoubleWord: 
 				begin 
 					commitBlock <= storeBlock; 
-					//commitBlock[(loadAddress % (memoryBlockSize/8)*8)+:64] <= storeVal[63-:64];
+					commitBlock[(loadAddress % (memoryBlockSize/8)*8)+:64] <= storeVal[63-:64];
 					isCommit <= 1;
 				end//store 64b
 				storeQuadWord:
@@ -402,21 +402,17 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		end		
 	end
 	
-	integer blockIdx = 0; 
+	integer i; 
 	//stage 3 for stores, this is the commit stage.
 	always @(posedge clock_i)
 	begin
-		//reset the data memory
-		/*
+		//reset the data memory		
 		if(reset_i == 1)
 		begin
-			for(blockIdx = 0; blockIdx < 128; blockIdx = blockIdx + 1)
-			begin
-				dataMemory[blockIdx] <= 0;
-			end
+			dataMemory[0] <= 0; dataMemory[1] <= 0; dataMemory[2] <= 0; dataMemory[3] <= 0; dataMemory[4] <= 0; dataMemory[5] <= 0; dataMemory[6] <= 0; dataMemory[7] <= 0; dataMemory[8] <= 0;	dataMemory[9] <= 0;
 		end
 		//commit's the block to memory
-		else*/ if(isCommit == 1)
+		else if(isCommit == 1)
 		begin
 			dataMemory[(commitAddress / memoryBlockSize)] <= commitBlock;
 		end
