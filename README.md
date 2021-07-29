@@ -3,6 +3,7 @@ This project is for my Masters Dissertation. Documentation will be provided in t
 
 TODO:
 Fix LoadStore unit because it's not commiting to memory and not reading from memory and/or outputting to the reg writeback
+Implement more test hanesses for the later pipeline stages (after reg file)
 New memory controller
 Expand functionality of the stall unit (allow load/stores to stall the CPU)
 Implement branch unit
