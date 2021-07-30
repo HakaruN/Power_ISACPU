@@ -1,11 +1,10 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
-
+//NOTE/TODO: For store quadword the decoder needs to implement operand1 for the first doubleword, operand 2 for the regOffset, imm for the immOffset and operand3 for the last doubleword
 //////////////////////////////////////////////////////////////////////////////////
 module LoadStoreUnit#(
 parameter memoryBlockSize = 128, parameter numMemoryBlocks = 128,
-parameter loadByte = 1, parameter loadHalfWord = 2, parameter loadWord = 3, parameter loadDoubleword = 4, parameter loadQuadWord = 5,
-parameter storeByte = 1, parameter storeHalfWord = 2, parameter storeWord = 3, parameter storeDoubleWord = 4, parameter storeQuadWord = 5,
+parameter Byte = 1, parameter HalfWord = 2, parameter Word = 3, parameter DoubleWord = 4, parameter QuadWord = 5,
 parameter addressSize = 64, parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter immWith = 24, parameter regWidth = 5, parameter numRegs = 2**regWidth, parameter formatIndexRange = 5,
 parameter A = 1, parameter B = 2, parameter D = 3, parameter DQ = 4, parameter DS = 5, parameter DX = 6, parameter I = 7, parameter M = 8,
 parameter MD = 9, parameter MDS = 10, parameter SC = 11, parameter VA = 12, parameter VC = 13, parameter VX = 14, parameter X = 15, parameter XFL = 16,
@@ -39,161 +38,196 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//as memory block size is 128 bits and if we have 128 blocks, we have 2KiB of D-memory
 	//block = integer component of address / memoryBlockSize
 	//offset in block = address % memoryBlockSize
-	reg [0:memoryBlockSize - 1] dataMemory [0:numMemoryBlocks - 1];
+	reg [0:memoryBlockSize - 1] dataMemory [0:numMemoryBlocks - 1];//128 16B blocks
 	
-	//load buffer (stage 2) (read memory block satage)
-	reg [0:memoryBlockSize - 1] loadBlock; 
-	reg isLoad;//this is essentially an enable flag
-	reg [0:2] loadFormat;//indicates how many bytes to load eg: loadByte = 1, loadHalfWord = 2, loadWord = 3, loadDoubleword = 4, loadQuadWord = 5
-	reg [0:addressSize-1] loadAddress; reg isUpdate;//if isUpdate then reg1addr = loaded data and the load address is writen to reg 2
-	reg [0:5] reg1Address, reg2Address;
-	reg isloadAlgebraic;
+	//load buffers
+	reg enable1;
+	reg [0:2] format1;
+	reg isLoad1;
+	reg [0:addressSize-1] address1;//address that have been generated to load from - needed if isUpdate to write the address back to a reg
+	reg [0:6] blockAddress1;//the address of the block that were going to be loading from
+	reg [0:3] blockIndex1;//the index of a particular byte within the block	
+	reg [0:5] reg1Address1, reg2Address1;
+	reg [0:memoryBlockSize-1] loadBlock1;
+	reg isloadAlgebraic1, isUpdate1;
+	reg [0:63] operand1_1, operand2_1, operand3_1;
 	
-	//store buffer (stage 2) (update memory block stage)
-	reg [0:memoryBlockSize - 1] storeBlock;
-	reg isStore;//essentially a write enable
-	reg [0:2] storeFormat;
-	reg [0:addressSize-1] storeAddress;
-	reg [0:addressSize-1] storeVal;
-	
-	//store buffer (stage 3) (commit stage)
-	reg [0:memoryBlockSize - 1] commitBlock;
-	reg isCommit;//essentiall a commit enable
-	reg [0:addressSize-1] commitAddress;
-	
-	
-	//first always block = first stage
+	// stage 1
 	always @(posedge clock_i)
 	begin
 		functionalUnitCode_o <= LdStUnitCode;//as this output will never change so we set it here to allow the compiler to optimise it into hard logic
 		if(reset_i == 1)
 		begin
-			loadBlock <= 0;
+			enable1 <= 0; isLoad1 <= 0;
 		end
-		else if(reset_i == 0 && enable_i == 1 && functionalUnitCode_i == LdStUnitCode)
+		else if((enable_i == 1) && (functionalUnitCode_i == LdStUnitCode))
 		begin
+			operand1_1 <= operand1_i; operand2_1 <= operand2_i; operand3_1 <= operand3_i;
 			if(instructionFormat_i == D)
 			begin
 				case(opCode_i)
 					34: begin //Load Byte and Zero
-						loadFormat <= loadByte;
-						isLoad <= 1; isStore <= 0;//enable load, dissable store
-						loadAddress <= operand2_i + imm_i;//calculate the address
-						loadBlock <= dataMemory[(operand2_i + imm_i)/(memoryBlockSize/8)];//fetch the block from memory into this buffer
-						isUpdate <= 0;
-						reg1Address <= reg1Address_i; reg2Address <= reg2Address_i;
-						isloadAlgebraic <= 0;
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from (may not be needed)
+						blockIndex1 <= (operand2_i + imm_i) % 16;//the index in the block to load
+						address1 <= operand2_i + imm_i;//calculate the address
+						loadBlock1 <= dataMemory[(operand2_i + imm_i) / 16];//the block from memory
+						enable1 <= 1;
+						format1 <= Byte;//were loading a byte
+						isLoad1 <= 1;//enable load, dissable store						
+						isUpdate1 <= 0;
+						reg1Address1 <= reg1Address_i; reg2Address1 <= reg2Address_i;
+						isloadAlgebraic1 <= 0;
 					end
 					35: begin//Load Byte and Zero with Update
-						loadFormat <= loadByte;
-						isLoad <= 1; isStore <= 0;//enable load, dissable store
-						loadAddress <= operand2_i + imm_i;//calculate the address
-						loadBlock <= dataMemory[(operand2_i + imm_i)/(memoryBlockSize/8)];//fetch the block from memory into this buffer
-						isUpdate <= 1;
-						reg1Address <= reg1Address_i; reg2Address <= reg2Address_i;
-						isloadAlgebraic <= 0;
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from
+						blockIndex1 <= (operand2_i + imm_i) % 16;//the index in the block to load
+						address1 <= operand2_i + imm_i;//calculate the address
+						loadBlock1 <= dataMemory[(operand2_i + imm_i) / 16];//the block from memory
+						enable1 <= 1;
+						format1 <= Byte;//were loading a byte
+						isLoad1 <= 1;//enable load, dissable store						
+						isUpdate1 <= 1;
+						reg1Address1 <= reg1Address_i; reg2Address1 <= reg2Address_i;
+						isloadAlgebraic1 <= 0;
 					end
 					40: begin //Load Halfword and Zero
-						loadFormat <= loadHalfWord;
-						isLoad <= 1; isStore <= 0;//enable load, dissable store
-						loadAddress <= operand2_i + imm_i;//calculate the address
-						loadBlock <= dataMemory[(operand2_i + imm_i)/(memoryBlockSize/8)];//fetch the block from memory into this buffer
-						isUpdate <= 0;
-						reg1Address <= reg1Address_i; reg2Address <= reg2Address_i;
-						isloadAlgebraic <= 0;
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from (may not be needed)
+						blockIndex1 <= (operand2_i + imm_i) % 16;//the index in the block to load
+						address1 <= operand2_i + imm_i;//calculate the address
+						loadBlock1 <= dataMemory[(operand2_i + imm_i) / 16];//the block from memory
+						enable1 <= 1;
+						format1 <= HalfWord;//were loading a byte
+						isLoad1 <= 1;//enable load, dissable store						
+						isUpdate1 <= 0;
+						reg1Address1 <= reg1Address_i; reg2Address1 <= reg2Address_i;
+						isloadAlgebraic1 <= 0;
 					end
 					41: begin //Load Halfword and Zero with Update
-						loadFormat <= loadHalfWord;
-						isLoad <= 1; isStore <= 0;//enable load, dissable store
-						loadAddress <= operand2_i + imm_i;//calculate the address
-						loadBlock <= dataMemory[(operand2_i + imm_i)/(memoryBlockSize/8)];//fetch the block from memory into this buffer
-						isUpdate <= 1;
-						reg1Address <= reg1Address_i; reg2Address <= reg2Address_i;
-						isloadAlgebraic <= 0;
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from
+						blockIndex1 <= (operand2_i + imm_i) % 16;//the index in the block to load
+						address1 <= operand2_i + imm_i;//calculate the address
+						loadBlock1 <= dataMemory[(operand2_i + imm_i) / 16];//the block from memory
+						enable1 <= 1;
+						format1 <= HalfWord;//were loading a byte
+						isLoad1 <= 1;//enable load, dissable store						
+						isUpdate1 <= 1;
+						reg1Address1 <= reg1Address_i; reg2Address1 <= reg2Address_i;
+						isloadAlgebraic1 <= 0;
 					end
 					42: begin //Load Halfword Algebraic
-						loadFormat <= loadHalfWord;
-						isLoad <= 1; isStore <= 0;//enable load, dissable store
-						loadAddress <= operand2_i + imm_i;//calculate the address
-						loadBlock <= dataMemory[(operand2_i + imm_i)/(memoryBlockSize/8)];//fetch the block from memory into this buffer
-						isUpdate <= 0;
-						reg1Address <= reg1Address_i; reg2Address <= reg2Address_i;
-						isloadAlgebraic <= 1;
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from (may not be needed)
+						blockIndex1 <= (operand2_i + imm_i) % 16;//the index in the block to load
+						address1 <= operand2_i + imm_i;//calculate the address
+						loadBlock1 <= dataMemory[(operand2_i + imm_i) / 16];//the block from memory
+						enable1 <= 1;
+						format1 <= HalfWord;//were loading a byte
+						isLoad1 <= 1;//enable load, dissable store						
+						isUpdate1 <= 0;
+						reg1Address1 <= reg1Address_i; reg2Address1 <= reg2Address_i;
+						isloadAlgebraic1 <= 1;
 					end
 					43: begin //Load Halfword Algebraic with Update
-						loadFormat <= loadHalfWord;
-						isLoad <= 1; isStore <= 0;//enable load, dissable store
-						loadAddress <= operand2_i + imm_i;//calculate the address
-						loadBlock <= dataMemory[(operand2_i + imm_i)/(memoryBlockSize/8)];//fetch the block from memory into this buffer
-						isUpdate <= 1;
-						reg1Address <= reg1Address_i; reg2Address <= reg2Address_i;
-						isloadAlgebraic <= 1;
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from (may not be needed)
+						blockIndex1 <= (operand2_i + imm_i) % 16;//the index in the block to load
+						address1 <= operand2_i + imm_i;//calculate the address
+						loadBlock1 <= dataMemory[(operand2_i + imm_i) / 16];//the block from memory
+						enable1 <= 1;
+						format1 <= HalfWord;//were loading a byte
+						isLoad1 <= 1;//enable load, dissable store						
+						isUpdate1 <= 1;
+						reg1Address1 <= reg1Address_i; reg2Address1 <= reg2Address_i;
+						isloadAlgebraic1 <= 1;
 					end
 					32: begin //Load Word and Zero
-						loadFormat <= loadWord;
-						isLoad <= 1; isStore <= 0;//enable load, dissable store
-						loadAddress <= operand2_i + imm_i;//calculate the address
-						loadBlock <= dataMemory[(operand2_i + imm_i)/(memoryBlockSize/8)];//fetch the block from memory into this buffer
-						isUpdate <= 0;
-						reg1Address <= reg1Address_i; reg2Address <= reg2Address_i;
-						isloadAlgebraic <= 0;
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from
+						blockIndex1 <= (operand2_i + imm_i) % 16;//the index in the block to load
+						address1 <= operand2_i + imm_i;//calculate the address
+						loadBlock1 <= dataMemory[(operand2_i + imm_i) / 16];//the block from memory
+						enable1 <= 1;
+						format1 <= Word;//were loading a byte
+						isLoad1 <= 1;//enable load, dissable store						
+						isUpdate1 <= 0;
+						reg1Address1 <= reg1Address_i; reg2Address1 <= reg2Address_i;
+						isloadAlgebraic1 <= 0;
 					end
 					33: begin //Load Word and Zero with Update
-						loadFormat <= loadWord;
-						isLoad <= 1; isStore <= 0;//enable load, dissable store
-						loadAddress <= operand2_i + imm_i;//calculate the address
-						loadBlock <= dataMemory[(operand2_i + imm_i)/(memoryBlockSize/8)];//fetch the block from memory into this buffer
-						isUpdate <= 1;
-						reg1Address <= reg1Address_i; reg2Address <= reg2Address_i;
-						isloadAlgebraic <= 0;
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from
+						blockIndex1 <= (operand2_i + imm_i) % 16;//the index in the block to load
+						address1 <= operand2_i + imm_i;//calculate the address
+						loadBlock1 <= dataMemory[(operand2_i + imm_i) / 16];//the block from memory
+						enable1 <= 1;
+						format1 <= Word;//were loading a byte
+						isLoad1 <= 1;//enable load, dissable store						
+						isUpdate1 <= 1;
+						reg1Address1 <= reg1Address_i; reg2Address1 <= reg2Address_i;
+						isloadAlgebraic1 <= 0;
 					end
+					
 					38: begin //Store Byte	
-						storeBlock <= dataMemory[(operand2_i + imm_i)/(memoryBlockSize/8)];//This block is updated with the new byte and then writen to memory as a whole
-						isLoad <= 0; isStore <= 1;//dissable load, enable store
-						storeAddress <= operand2_i + imm_i;//calculate the address
-						storeVal <= operand1_i;
-						isUpdate <= 0;
-						storeFormat <= storeByte;
+						enable1 <= 1; isLoad1 <= 0;//were enabled and not loading, therefore storing
+						format1 <= Byte;//storing a byte
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from (may not be needed)
+						address1 <= operand2_i + imm_i;//calculate the address
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from
+						blockIndex1 <= (operand2_i + imm_i) % 16;//the index in the block to load
+						reg1Address1 <= reg1Address_i; reg2Address1 <= reg2Address_i;
+						loadBlock1 <= dataMemory[(operand2_i + imm_i) / 16];//the block from memory
+						isUpdate1 <= 0;
 					end
 					39: begin //Store Byte with Update
-						storeBlock <= dataMemory[(operand2_i + imm_i)/(memoryBlockSize/8)];//This block is updated with the new byte and then writen to memory as a whole
-						isLoad <= 0; isStore <= 1;//dissable load, enable store
-						storeAddress <= operand2_i + imm_i;//calculate the address
-						storeVal <= operand1_i;
-						isUpdate <= 1;
-						storeFormat <= storeByte;
+						enable1 <= 1; isLoad1 <= 0;//were enabled and not loading, therefore storing
+						format1 <= Byte;//storing a byte
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from (may not be needed)
+						address1 <= operand2_i + imm_i;//calculate the address
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from
+						blockIndex1 <= (operand2_i + imm_i) % 16;//the index in the block to load
+						reg1Address1 <= reg1Address_i; reg2Address1 <= reg2Address_i;
+						loadBlock1 <= dataMemory[(operand2_i + imm_i) / 16];//the block from memory
+						isUpdate1 <= 1;
 					end
 					44: begin //Store Halfword
-						storeBlock <= dataMemory[(operand2_i + imm_i)/(memoryBlockSize/8)];//This block is updated with the new byte and then writen to memory as a whole
-						isLoad <= 0; isStore <= 1;//dissable load, enable store
-						storeAddress <= operand2_i + imm_i;//calculate the address
-						storeVal <= operand1_i;
-						isUpdate <= 0;
-						storeFormat <= storeHalfWord;
+						enable1 <= 1; isLoad1 <= 0;//were enabled and not loading, therefore storing
+						format1 <= HalfWord;//storing a byte
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from (may not be needed)
+						address1 <= operand2_i + imm_i;//calculate the address
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from
+						blockIndex1 <= (operand2_i + imm_i) % 16;//the index in the block to load
+						reg1Address1 <= reg1Address_i; reg2Address1 <= reg2Address_i;
+						loadBlock1 <= dataMemory[(operand2_i + imm_i) / 16];//the block from memory
+						isUpdate1 <= 0;
 					end
 					45: begin //Store Halfword with Update
-						storeBlock <= dataMemory[(operand2_i + imm_i)/(memoryBlockSize/8)];//This block is updated with the new byte and then writen to memory as a whole
-						isLoad <= 0; isStore <= 1;//dissable load, enable store
-						storeAddress <= operand2_i + imm_i;//calculate the address
-						storeVal <= operand1_i;
-						isUpdate <= 1;
-						storeFormat <= storeHalfWord;
+						enable1 <= 1; isLoad1 <= 0;//were enabled and not loading, therefore storing
+						format1 <= HalfWord;//storing a byte
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from (may not be needed)
+						address1 <= operand2_i + imm_i;//calculate the address
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from
+						blockIndex1 <= (operand2_i + imm_i) % 16;//the index in the block to load
+						reg1Address1 <= reg1Address_i; reg2Address1 <= reg2Address_i;
+						loadBlock1 <= dataMemory[(operand2_i + imm_i) / 16];//the block from memory
+						isUpdate1 <= 1;
 					end
 					36: begin //Store Word
-						storeBlock <= dataMemory[(operand2_i + imm_i)/(memoryBlockSize/8)];//This block is updated with the new byte and then writen to memory as a whole
-						isLoad <= 0; isStore <= 1;//dissable load, enable store
-						storeAddress <= operand2_i + imm_i;//calculate the address
-						storeVal <= operand1_i;
-						isUpdate <= 0;
-						storeFormat <= storeWord;
+						enable1 <= 1; isLoad1 <= 0;//were enabled and not loading, therefore storing
+						format1 <= Word;//storing a byte
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from (may not be needed)
+						address1 <= operand2_i + imm_i;//calculate the address
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from
+						blockIndex1 <= (operand2_i + imm_i) % 16;//the index in the block to load
+						reg1Address1 <= reg1Address_i; reg2Address1 <= reg2Address_i;
+						loadBlock1 <= dataMemory[(operand2_i + imm_i) / 16];//the block from memory
+						isUpdate1 <= 0;
 					end
 					37: begin //Store Word with Update
-						storeBlock <= dataMemory[(operand2_i + imm_i)/(memoryBlockSize/8)];//This block is updated with the new byte and then writen to memory as a whole
-						isLoad <= 0; isStore <= 1;//dissable load, enable store
-						storeAddress <= operand2_i + imm_i;//calculate the address
-						storeVal <= operand1_i;
-						isUpdate <= 1;
-						storeFormat <= storeWord;
+						enable1 <= 1; isLoad1 <= 0;//were enabled and not loading, therefore storing
+						format1 <= Word;//storing a byte
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from (may not be needed)
+						address1 <= operand2_i + imm_i;//calculate the address
+						blockAddress1 <= (operand2_i + imm_i) / 16;//the address of the block to load from
+						blockIndex1 <= (operand2_i + imm_i) % 16;//the index in the block to load
+						reg1Address1 <= reg1Address_i; reg2Address1 <= reg2Address_i;
+						loadBlock1 <= dataMemory[(operand2_i + imm_i) / 16];//the block from memory
+						isUpdate1 <= 1;
 					end
 					46: begin //Load Multiple Word
 						/*Throw not implemented instruction*/
@@ -201,221 +235,171 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 					47: begin //Store Multiple Word
 						/*Throw not implemented instruction*/
 					end
-					default: begin /*Throw invalid instruction*/ end
+					default: begin /*Throw invalid instruction*/ enable1 <= 0; end
 				endcase
-			end
-			else if(instructionFormat_i == DS)
-			begin
-				if(opCode_i == 58)//the loads
-				begin
-					case(xOpCode_i)
-						0: begin end//Load Doubleword
-						1: begin end//Load Doubleword with Update
-						2: begin end//Load Word Algebraic
-						default: begin /*Throw invalid instruction*/ end
-					endcase
-				end
-				else if(opCode_i == 62)//the stores
-				begin
-					case(xOpCode_i)
-						0: begin end//Store Doubleword
-						1: begin end//Store Doubleword with Update
-						2: begin end//Store Quadword
-						default: begin /*Throw invalid instruction*/ end
-					endcase
-				end
-				else
-				begin
-					//throw a invalid instruction exception
-				end
-			end
-			else if(instructionFormat_i == DQ)
-			begin
-				if(opCode_i == 56)//load quadword
-				begin
-					
-				end
-				else
-				begin
-					//throw a invalid instruction exception
-				end
-			end
+			end				
 		end
 		else
 		begin
-		end
-	end
-	
-	//this always is the second stage used for loads
-	always @(posedge clock_i)
-	begin
-		if(isLoad == 1)//if we fetched a block last cycle
-		begin
-			case(loadFormat)
-				//load 8 bits
-				loadByte: begin 
-					//set the first reg
-					reg1WritebackEnable_o <= 1;
-					reg1WritebackAddress_o <= reg1Address;
-					reg1WritebackVal_o <= loadBlock[((loadAddress % 16) * 8)+:8];//load the byte into the writeback output
-					if(isloadAlgebraic == 0)
-					begin
-						reg1WritebackVal_o[0:55] <= 56'h0;//zero extend
-					end
-					else
-					begin
-						reg1WritebackVal_o[0:55] <= loadBlock[loadAddress % (memoryBlockSize/8)] ? 56'hFFFFFFFFFFFFFF : 56'h0;//sign extend						
-					end
-					reg2WritebackEnable_o <= isUpdate;//set the reg2Enable is isUpdate
-					if(isUpdate == 1)//if enable
-					begin
-						reg2WritebackAddress_o <= reg2Address;//set the writeback address on the second reg writeback port 
-						reg2WritebackVal_o <= loadAddress;//if is update, the address we loaded from is writen to reg 2
-					end
-				end
-				//load 16 bits
-				loadHalfWord: begin
-					reg1WritebackEnable_o <= 1;
-					reg1WritebackAddress_o <= reg1Address;
-					reg1WritebackVal_o[63-:16] <= loadBlock[(loadAddress % (memoryBlockSize/8)*8)+:16];//load the byte into the writeback output
-					if(isloadAlgebraic == 0)
-					begin
-						reg1WritebackVal_o[0:47] <= 48'h0;//zero extend
-					end
-					else
-					begin
-						reg1WritebackVal_o[0:47] <= loadBlock[loadAddress % (memoryBlockSize/8)] ? 48'hFFFFFFFFFFFF : 48'h0;//sign extend						
-					end					
-					reg2WritebackEnable_o <= isUpdate;//set the reg2Enable is isUpdate
-					if(isUpdate == 1)//if enable
-					begin
-						reg2WritebackAddress_o <= reg2Address;//set the writeback address on the second reg writeback port 
-						reg2WritebackVal_o <= loadAddress;//if is update, the address we loaded from is writen to reg 2
-					end
-				end 
-				//load 32 bits
-				loadWord: begin
-					reg1WritebackEnable_o <= 1;
-					reg1WritebackAddress_o <= reg1Address;					
-					reg1WritebackVal_o[63-:32] <= loadBlock[(loadAddress % (memoryBlockSize/8)*8)+:32];//load the byte into the writeback output
-					if(isloadAlgebraic == 0)
-					begin
-						reg1WritebackVal_o[0:31] <= 32'h0;//zero extend
-					end
-					else
-					begin
-						reg1WritebackVal_o[0:31] <= loadBlock[loadAddress % (memoryBlockSize/8)] ? 32'hFFFFFFFF : 32'h0;//sign extend						
-					end					
-					reg2WritebackEnable_o <= isUpdate;//set the reg2Enable is isUpdate
-					if(isUpdate == 1)//if enable
-					begin
-						reg2WritebackAddress_o <= reg2Address;//set the writeback address on the second reg writeback port 
-						reg2WritebackVal_o <= loadAddress;//if is update, the address we loaded from is writen to reg 2
-					end
-				end
-				//load 64 bits
-				loadDoubleword: begin
-					reg1WritebackEnable_o <= 1;
-					reg1WritebackAddress_o <= reg1Address;
-					reg1WritebackVal_o <= loadBlock[(loadAddress % (memoryBlockSize/8)*8)+:64];//load the byte into the writeback output
-					reg2WritebackEnable_o <= isUpdate;//set the reg2Enable is isUpdate
-					if(isUpdate == 1)//if enable
-					begin
-						reg2WritebackAddress_o <= reg2Address;//set the writeback address on the second reg writeback port 
-						reg2WritebackVal_o <= loadAddress;//if is update, the address we loaded from is writen to reg 2
-					end
-				end
-				//load 128 bits	
-				loadQuadWord: begin
-					reg1WritebackEnable_o <= 1;
-					reg2WritebackEnable_o <= 1;
-					reg1WritebackAddress_o <= reg1Address;
-					reg2WritebackAddress_o <= reg1Address + 1;
-					reg1WritebackVal_o <= loadBlock[loadAddress+:64];//load the byte into the writeback output
-					reg2WritebackVal_o <= loadBlock[(loadAddress+64)+:64];//load the byte into the writeback output				
-					//NOTE: update is not supported with load quads. microcode must be implemented where this instruction 
-					//completes as a loadDoubleWord followed by a loadDoubleWord with update					
-				end
-				
-				default: begin
-					reg1WritebackEnable_o <= 0;
-					reg2WritebackEnable_o <= 0;
-				end//throw error
-			endcase		
-		end
-		else//if we didn't fetch a block last cycle
-		begin
-			reg1WritebackEnable_o <= 0; reg2WritebackEnable_o <= 0;
+			enable1 <= 0;
 		end		
-	end
+	end	
+
 	
+	integer i = 0;
+	//store stage 2 to 3 buffers
+	reg enable2;
+	reg [0:addressSize-1] address2;//address that have been generated to store to
+	reg [0:6] blockAddress2;//the address of the block that were going to be loading from
+	reg [0:5] reg2Address2;
+	reg isUpdate2;
+	reg [0:63] operand1_2, operand2_2, operand3_2;	
+	reg [0:memoryBlockSize-1] newBlock2;
 	
-	
-	//this is the second stage used for stores, it is responsible for updating the storeBlock with the new data but does not commit the block back to memory
+	//load stage 2
 	always @(posedge clock_i)
 	begin
-		if(reset_i)
-		begin
-			isCommit <= 0;
-		end
-		else if(isStore == 1)
-		begin
-			commitAddress <= storeAddress;
-			case(storeFormat)
-				storeByte: 
-				begin 
-					commitBlock <= storeBlock; 					
-					//commitBlock[(loadAddress * 8) % memoryBlockSize+:8] <= storeVal[63-:8];
-					isCommit <= 1;
-				end//store 8b
-				storeHalfWord: 
-				begin 
-					commitBlock <= storeBlock; 
-					//commitBlock[(loadAddress % (memoryBlockSize/8)*8)+:16] <= storeVal[63-:16];
-					isCommit <= 1;
-				end//store 16b
-				storeWord: 
-				begin
-					commitBlock <= storeBlock; 
-					//commitBlock[(loadAddress % (memoryBlockSize/8)*8)+:32] <= storeVal[63-:32];
-					isCommit <= 1;
-				end//store 32b
-				storeDoubleWord: 
-				begin 
-					commitBlock <= storeBlock; 
-					//commitBlock[(loadAddress % (memoryBlockSize/8)*8)+:64] <= storeVal[63-:64];
-					isCommit <= 1;
-				end//store 64b
-				storeQuadWord:
-				begin 
-					isCommit <= 0; //TODO: Implement store quad words
-				end
-				default: 
-				begin
-					isCommit <= 0;//TODO: Throw error
-				end
-			endcase
-		end
-		else
-		begin
-			isCommit <= 0;
-		end		
-	end
-	
-	integer i; 
-	//stage 3 for stores, this is the commit stage.
-	always @(posedge clock_i)
-	begin
-		//reset the data memory		
 		if(reset_i == 1)
 		begin
-			dataMemory[0] <= 0; dataMemory[1] <= 0; dataMemory[2] <= 0; dataMemory[3] <= 0; dataMemory[4] <= 0; dataMemory[5] <= 0; dataMemory[6] <= 0; dataMemory[7] <= 0; dataMemory[8] <= 0;	dataMemory[9] <= 0;
+			reg1WritebackEnable_o <= 0; reg2WritebackEnable_o <= 0;
+			for(i = 0; i < numMemoryBlocks; i = i + 1)
+			begin
+				dataMemory[i] <= 128'b0;//reset the memory to zeros
+			end
 		end
-		//commit's the block to memory
-		else if(isCommit == 1)
+		else if(enable1 == 1 && isLoad1 == 1)
 		begin
-			dataMemory[(commitAddress / memoryBlockSize)] <= commitBlock;
+			if(format1 == Byte)
+				begin 
+					reg1WritebackEnable_o <= 1; reg2WritebackEnable_o <= isUpdate1;//set the writeback enables
+					reg1WritebackAddress_o <= reg1Address1;
+					if(isloadAlgebraic1 == 0) begin//(
+						reg1WritebackVal_o[63-:8] <= loadBlock1[blockIndex1+:8]; reg1WritebackVal_o[0+:(64-8)] <= 0; end//zero extended
+					else begin
+						reg1WritebackVal_o <= $signed(loadBlock1[blockIndex1+:8]); end//sign extend
+					if(isUpdate1 == 1) begin
+						reg2WritebackVal_o <= address1;
+						reg1WritebackAddress_o <= reg2Address1;
+					end
+				end	
+			else if(format1 == HalfWord)
+				begin 
+					reg1WritebackEnable_o <= 1; reg2WritebackEnable_o <= isUpdate1;//set the writeback enables
+					reg1WritebackAddress_o <= reg1Address1;
+					if(isloadAlgebraic1 == 0) begin//(
+						reg1WritebackVal_o[63-:16] <= loadBlock1[blockIndex1+:16]; reg1WritebackVal_o[0+:(64-16)] <= 0; end//zero extended
+					else begin
+						reg1WritebackVal_o <= $signed(loadBlock1[blockIndex1+:16]); end//sign extend
+					if(isUpdate1 == 1) begin
+						reg2WritebackVal_o <= address1;
+						reg1WritebackAddress_o <= reg2Address1;
+					end
+				end					
+			else if(format1 == Word)
+				begin 
+					reg1WritebackEnable_o <= 1; reg2WritebackEnable_o <= isUpdate1;//set the writeback enables
+					reg1WritebackAddress_o <= reg1Address1;
+					if(isloadAlgebraic1 == 0) begin//(
+						reg1WritebackVal_o[63-:32] <= loadBlock1[blockIndex1+:32]; reg1WritebackVal_o[0+:(64-32)] <= 0; end//zero extended
+					else begin
+						reg1WritebackVal_o <= $signed(loadBlock1[blockIndex1+:32]); end//sign extend
+					if(isUpdate1 == 1) begin
+						reg2WritebackVal_o <= address1;
+						reg1WritebackAddress_o <= reg2Address1;
+					end
+				end
+			else if(format1 == DoubleWord)
+				begin 
+					reg1WritebackEnable_o <= 1; reg2WritebackEnable_o <= isUpdate1;//set the writeback enables
+					reg1WritebackAddress_o <= reg1Address1;
+					reg1WritebackVal_o <= loadBlock1[blockIndex1+:64];
+					if(isUpdate1 == 1) begin
+						reg2WritebackVal_o <= address1;
+						reg1WritebackAddress_o <= reg2Address1;
+					end
+				end
+			else if(format1 == QuadWord)
+				begin 
+					reg1WritebackEnable_o <= 1; reg2WritebackEnable_o <= 1;//set the writeback enables
+					reg1WritebackAddress_o <= reg1Address1; reg1WritebackAddress_o <= reg1Address1 + 1;//reg pair
+					reg1WritebackVal_o <= loadBlock1[blockIndex1+:64];
+					reg2WritebackVal_o <= loadBlock1[(blockIndex1+64)+:64];
+				end			
+		end
+		else
+		begin
+			reg1WritebackEnable_o <= 0; reg2WritebackEnable_o <= 0;
+		end
+		
+		//store stage 3
+		if(enable2 == 1)
+		begin
+			//perform the block write
+			dataMemory[blockAddress2] <= newBlock2;
+			if(isUpdate2 == 1)
+			begin
+				reg1WritebackEnable_o <= 1;
+				reg1WritebackAddress_o <= reg2Address2;
+				reg1WritebackVal_o <= address2;
+			end
 		end
 	end
+	
+	//store stage 2
+	always @(posedge clock_i)
+	begin
+		if((enable1 == 1) && (isLoad1 == 0))
+		begin
+			enable2 <= enable1;
+			address2 <= address1;
+			blockAddress2 <= blockAddress1;
+			operand1_2 <= operand1_1; operand2_2 <= operand2_1; operand3_2 <= operand3_1;
+			reg2Address2 <= reg2Address1;
+			isUpdate2 <= isUpdate1;
+			if(format1 == Byte) begin//write the byte to the new block
+			newBlock2 <= loadBlock1; 
+			case(blockIndex1)
+				 0: begin newBlock2[(0*8)+:8]  <= operand1_1[63-:8]; end  1: begin newBlock2[(1*8)+:8]  <= operand1_1[63-:8];end 
+				 2: begin newBlock2[(2*8)+:8]  <= operand1_1[63-:8]; end  3: begin newBlock2[(3*8)+:8]  <= operand1_1[63-:8];end
+				 4: begin newBlock2[(4*8)+:8]  <= operand1_1[63-:8]; end  5: begin newBlock2[(5*8)+:8]  <= operand1_1[63-:8];end 
+				 6: begin newBlock2[(6*8)+:8]  <= operand1_1[63-:8]; end  7: begin newBlock2[(7*8)+:8]  <= operand1_1[63-:8];end
+				 8: begin newBlock2[(8*8)+:8]  <= operand1_1[63-:8]; end  9: begin newBlock2[(9*8)+:8]  <= operand1_1[63-:8];end 
+				10: begin newBlock2[(10*8)+:8] <= operand1_1[63-:8]; end 11: begin newBlock2[(11*8)+:8] <= operand1_1[63-:8];end
+				12: begin newBlock2[(12*8)+:8] <= operand1_1[63-:8]; end 13: begin newBlock2[(13*8)+:8] <= operand1_1[63-:8];end 
+				14: begin newBlock2[(14*8)+:8] <= operand1_1[63-:8]; end 15: begin newBlock2[(15*8)+:8] <= operand1_1[63-:8];end
+			endcase			
+			end
+			
+			else if(format1 == HalfWord) begin//write the half word to the new block
+			newBlock2 <= loadBlock1; 
+			case(blockIndex1)
+				 0: begin newBlock2[(0*8)+:16]  <= operand1_1[63-:16]; end 2: begin newBlock2[(2*8)+:16]  <= operand1_1[63-:16];end
+				 4: begin newBlock2[(4*8)+:16]  <= operand1_1[63-:16]; end 6: begin newBlock2[(6*8)+:16]  <= operand1_1[63-:16];end
+				 8: begin newBlock2[(8*8)+:16]  <= operand1_1[63-:16]; end 10: begin newBlock2[(10*8)+:16] <= operand1_1[63-:16];end
+				12: begin newBlock2[(12*8)+:16] <= operand1_1[63-:16]; end 14: begin newBlock2[(14*8)+:16] <= operand1_1[63-:16];end
+			endcase	
+			end
+			
+			else if(format1 == Word) begin//write the word to the new block
+			newBlock2 <= loadBlock1;
+			case(blockIndex1)
+				 0: begin newBlock2[(0*8)+:32]  <= operand1_1[63-:32]; end 4: begin newBlock2[(4*8)+:32]  <= operand1_1[63-:32];end
+				 8: begin newBlock2[(8*8)+:32]  <= operand1_1[63-:32]; end 12: begin newBlock2[(12*8)+:32] <= operand1_1[63-:32];end
+			endcase	
+			end
+			else if(format1 == DoubleWord) begin//write the double word to the new block
+			newBlock2 <= loadBlock1;
+			case(blockIndex1)
+				 0: begin newBlock2[(0*8)+:64]  <= operand1_1; end 8: begin newBlock2[(8*8)+:64]  <= operand1_1;end
+			endcase	
+			end
+			else if(format1 == QuadWord) begin//write the double word to the new block
+			newBlock2[(0*8)+:64] <= operand2_1; newBlock2[(8*8)+:64] <= operand3_1;
+			end
+		end
+	end
+	
+
+
 
 endmodule
