@@ -29,7 +29,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	wire isCacheMiss;
 	reg flushPipeline;	
 	reg fetchEnable;//enable signal to the fetch unit - NOTE: the enable must be zero when isCacheMiss == 1
-	reg [0:addressSize-1] PC;//fetch Address
+	wire [0:addressSize-1] PC;//fetch Address
 	
 	
 	//memory controller out
@@ -245,6 +245,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		.instructionFormat_i(RegOutInstructionFormat),
 		//command out
 		.loadStoreStall(ExecLoadStoreStallOut), .branchStall(ExecBranchStallOut),
+		.isBranching_o(), .pc_o(PC),
 		//reg writeback
 		.functionalUnitCode_o(ExecFunctionalUnitCodeOut),
 		.reg1WritebackEnable_o(ExecReg1WritebackEnable), .reg2WritebackEnable_o(ExecReg2WritebackEnable),
@@ -266,10 +267,6 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	);
 	
 	//TODO implement exception unit
-	
-	always @(posedge clock_i)
-	begin
-		PC <= PC + 1;
-	end
+	//TODO implement flush unit
 
 endmodule

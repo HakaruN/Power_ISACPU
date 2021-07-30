@@ -28,7 +28,8 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire [0:xOpCodeWidth-1] xOpCode_i,
 	input wire [0:formatIndexRange-1] instructionFormat_i,
 	//command out
-	output wire loadStoreStall, output wire branchStall,
+	output wire loadStoreStall, output wire branchStall, output wire isBranching_o,
+	output wire [0:addressSize-1] pc_o,
 	//reg writebacks
 	output wire [0:2] functionalUnitCode_o,
 	output wire reg1WritebackEnable_o, reg2WritebackEnable_o,
@@ -97,6 +98,27 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	);
 	
 	BranchUnit branchUnit(
+	//command
+	.clock_i(clock_i),
+	.reset_i(reset_i),
+	.stall_i(),
+	.enable_i(enable_i),
+	//data in
+	//registers
+	.is64Bit_i(is64Bit_i),
+	//instruction data
+	.operand1_i(operand1_i), .operand2_i(operand2_i), .operand3_i(operand3_i),
+	.reg1Address_i(reg1Address_i), .reg2Address_i(reg2Address_i), .reg3Address_i(reg3Address_i),
+	.imm_i(imm_i),
+	.bit1_i(bit1_i), .bit2_i(bit2_i),
+	.functionalUnitCode_i(functionalUnitCode_i),
+	.instructionAddress_i(instructionAddress_i),
+	.opCode_i(opCode_i),
+	.xOpCode_i(xOpCode_i),
+	.instructionFormat_i(instructionFormat_i),
+	//data out
+	.isBranching_o(isBranching_o),
+	.PC_o(pc_o)
 	);
 	
 	//writeback merge queue

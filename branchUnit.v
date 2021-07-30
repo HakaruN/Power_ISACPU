@@ -1,12 +1,17 @@
 `timescale 1ns / 1ps
 //////////////////////////////////////////////////////////////////////////////////
 //
+//Implemented:
+//I form instruction, B form instruction
+//TODO:
+//XL form instructions
+//SC instructions
 //////////////////////////////////////////////////////////////////////////////////
 module BranchUnit#(
 //operating parameters
 parameter resetVector = 0,
 //data widths
-parameter immWith = 24, parameter regWidth = 5, parameter numRegs = 2**regWidth, parameter formatIndexRange = 5, parameter addressWidth = 64,
+parameter immWith = 24, parameter regWidth = 5, parameter numRegs = 2**regWidth, parameter formatIndexRange = 5, parameter addressWidth = 64, parameter opcodeWidth = 6, parameter xOpCodeWidth = 10,
 //functional unit codes
 parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, parameter BranchUnitCode = 3, parameter TrapUnitCode = 4,
 //Instruction formats
@@ -23,10 +28,6 @@ parameter Z23 = 25, parameter INVALID = 0
 	//data in
 	//registers
 	input wire is64Bit_i,
-	input wire [32:addressWidth-1] conditionReg_i,//the value of the CR comes in here
-	input wire [0:addressWidth-1] linkReg_i,//the value of the LR comes in here
-	input wire [0:addressWidth-1] countReg_i,//the value of the CTR comes in here
-	input wire [0:addressWidth-1] TargetAddrReg_i,//the value of the TAR comes in here
 	//instruction data
 	input wire [0:63] operand1_i, operand2_i, operand3_i,
 	input wire [0:regWidth-1] reg1Address_i, reg2Address_i, reg3Address_i,
@@ -36,14 +37,17 @@ parameter Z23 = 25, parameter INVALID = 0
 	input wire [0:63] instructionAddress_i,
 	input wire [0:opcodeWidth-1] opCode_i,
 	input wire [0:xOpCodeWidth-1] xOpCode_i,
-	input wire [0:formatIndexRange-1] instructionFormat_i,	
-	//data out
-	output reg [0:addressWidth-1] PC_o,
-	output reg [0:addressWidth-1] LKReg_o,
-	output reg LKRegEnable_o
+	input wire [0:formatIndexRange-1] instructionFormat_i,
+	//command out
+	output reg isBranching_o,//tells the flush unit to flush the pipeline
+	output reg [0:addressWidth-1] PC_o
 	);
 	
+	reg [32:addressWidth-1] conditionReg;//condition reg
+	reg [0:addressWidth-1] linkReg;
 	reg [0:addressWidth-1] PC;
+	reg [0:addressWidth-1] countReg;//CRT
+	reg [0:addressWidth-1] TargetAddrReg;
 	
 	always @(posedge clock_i)
 	begin
@@ -55,6 +59,7 @@ parameter Z23 = 25, parameter INVALID = 0
 		begin
 			if(stall_i == 0 && enable_i == 1)
 			begin
+				
 				//branch
 				if(functionalUnitCode_i == I && opCode_i == 18)
 				begin					
@@ -83,17 +88,213 @@ parameter Z23 = 25, parameter INVALID = 0
 							PC <= ($signed({imm_i, 2'b00}) + instructionAddress_i) & 64'hFFFFFFFF;
 						end
 					end
-					if(bit2_i == 1)//if LK
+					//set the link reg
+					if(bit2_i == 1)
 					begin
 						//write the next instruction addr (instructionAddr + 4) to the LK reg
-						LKReg_o <= instructionAddress_i + 4;
+						linkReg <= instructionAddress_i + 4;
 					end
 				end
 				
 				//branch conditional
 				else if(functionalUnitCode_i == B && opCode_i == 16)
 				begin
+					//condition reg bit to be tested = operand2_i + 32
+					//operand1_i is the branch rules (figure 40 page 33)
 					
+					//set the link reg
+					if(bit2_i == 1)
+					begin
+						//write the next instruction addr (instructionAddr + 4) to the LK reg
+						linkReg <= instructionAddress_i + 4;
+					end
+				
+					case(operand1_i)
+						0: begin //decrement the CTR then branch if the decremented CRT != 0 (0:63 in 64b mode and 32:63 in 32b mode) and CR[operand2_i] == 0														
+							if((countReg - 1) != 0 && conditionReg[operand2_i + 32] == 0)
+							begin
+								if(bit1_i == 1)//if AA == 1
+								begin
+									if(is64Bit_i)
+										PC <= ($signed({imm_i, 2'b00}));
+									else
+										PC <= $signed({imm_i, 2'b00}) & 64'hFFFFFFFF;//zero out top 32 bits
+								end
+								else//AA == 0
+								begin
+									if(is64Bit_i)
+										PC <= $signed({imm_i, 2'b00}) + instructionAddress_i;
+									else
+										PC <= ($signed({imm_i, 2'b00}) + instructionAddress_i) & 64'hFFFFFFFF;//zero out top 32 bits
+								end
+							end
+							countReg <= countReg - 1;//decrement the countReg
+						end
+						
+						1: begin //decrement the CTR then branch if the decremented CRT == 0 (0:63 in 64b mode and 32:63 in 32b mode) and CR[operand2_i] == 0
+							if((countReg - 1) == 0 && conditionReg[operand2_i + 32] == 0)
+							begin
+								if(bit1_i == 1)//if AA == 1
+								begin
+									if(is64Bit_i)
+										PC <= ($signed({imm_i, 2'b00}));
+									else
+										PC <= $signed({imm_i, 2'b00}) & 64'hFFFFFFFF;//zero out top 32 bits
+								end
+								else//AA == 0
+								begin
+									if(is64Bit_i)
+										PC <= $signed({imm_i, 2'b00}) + instructionAddress_i;
+									else
+										PC <= ($signed({imm_i, 2'b00}) + instructionAddress_i) & 64'hFFFFFFFF;//zero out top 32 bits
+								end
+							end
+							countReg <= countReg - 1;//decrement the countReg
+						end
+						
+						2: begin //branch if the CR[operand2_i] == 0
+							if(conditionReg[operand2_i + 32] == 0)
+							begin
+								if(bit1_i == 1)//if AA == 1
+								begin
+									if(is64Bit_i)
+										PC <= ($signed({imm_i, 2'b00}));
+									else
+										PC <= $signed({imm_i, 2'b00}) & 64'hFFFFFFFF;//zero out top 32 bits
+								end
+								else//AA == 0
+								begin
+									if(is64Bit_i)
+										PC <= $signed({imm_i, 2'b00}) + instructionAddress_i;
+									else
+										PC <= ($signed({imm_i, 2'b00}) + instructionAddress_i) & 64'hFFFFFFFF;//zero out top 32 bits
+								end
+							end
+						end
+						
+						3: begin //decrement the CTR then branch if the decremented CRT != 0 (0:63 in 64b mode and 32:63 in 32b mode) and CR[operand2_i] == 1
+							if((countReg - 1) != 0 && conditionReg[operand2_i + 32] == 1)
+							begin
+								if(bit1_i == 1)//if AA == 1
+								begin
+									if(is64Bit_i)
+										PC <= ($signed({imm_i, 2'b00}));
+									else
+										PC <= $signed({imm_i, 2'b00}) & 64'hFFFFFFFF;//zero out top 32 bits
+								end
+								else//AA == 0
+								begin
+									if(is64Bit_i)
+										PC <= $signed({imm_i, 2'b00}) + instructionAddress_i;
+									else
+										PC <= ($signed({imm_i, 2'b00}) + instructionAddress_i) & 64'hFFFFFFFF;//zero out top 32 bits
+								end
+							end
+							countReg <= countReg - 1;//decrement the countReg						
+						end
+						
+						4: begin //decrement the CTR then branch if the decremented CRT == 0 (0:63 in 64b mode and 32:63 in 32b mode) and CR[operand2_i] == 1
+							if((countReg - 1) == 0 && conditionReg[operand2_i + 32] == 1)
+							begin
+								if(bit1_i == 1)//if AA == 1
+								begin
+									if(is64Bit_i)
+										PC <= ($signed({imm_i, 2'b00}));
+									else
+										PC <= $signed({imm_i, 2'b00}) & 64'hFFFFFFFF;//zero out top 32 bits
+								end
+								else//AA == 0
+								begin
+									if(is64Bit_i)
+										PC <= $signed({imm_i, 2'b00}) + instructionAddress_i;
+									else
+										PC <= ($signed({imm_i, 2'b00}) + instructionAddress_i) & 64'hFFFFFFFF;//zero out top 32 bits
+								end
+							end
+							countReg <= countReg - 1;//decrement the countReg
+						end
+						
+						5: begin //branch if the CR[operand2_i] == 1
+							if(conditionReg[operand2_i + 32] == 1)
+							begin
+								if(bit1_i == 1)//if AA == 1
+								begin
+									if(is64Bit_i)
+										PC <= ($signed({imm_i, 2'b00}));
+									else
+										PC <= $signed({imm_i, 2'b00}) & 64'hFFFFFFFF;//zero out top 32 bits
+								end
+								else//AA == 0
+								begin
+									if(is64Bit_i)
+										PC <= $signed({imm_i, 2'b00}) + instructionAddress_i;
+									else
+										PC <= ($signed({imm_i, 2'b00}) + instructionAddress_i) & 64'hFFFFFFFF;//zero out top 32 bits
+								end
+							end
+						end
+						
+						6: begin //decrement the CTR then branch if the decremented CRT != 0 (0:63 in 64b mode and 32:63 in 32b mode)
+							if((countReg - 1) != 0)
+							begin
+								if(bit1_i == 1)//if AA == 1
+								begin
+									if(is64Bit_i)
+										PC <= ($signed({imm_i, 2'b00}));
+									else
+										PC <= $signed({imm_i, 2'b00}) & 64'hFFFFFFFF;//zero out top 32 bits
+								end
+								else//AA == 0
+								begin
+									if(is64Bit_i)
+										PC <= $signed({imm_i, 2'b00}) + instructionAddress_i;
+									else
+										PC <= ($signed({imm_i, 2'b00}) + instructionAddress_i) & 64'hFFFFFFFF;//zero out top 32 bits
+								end
+							end
+							countReg <= countReg - 1;//decrement the countReg
+						end
+						
+						7: begin //decrement the CTR then branch if the decremented CRT == 0 (0:63 in 64b mode and 32:63 in 32b mode)
+							if((countReg - 1) == 0)
+							begin
+								if(bit1_i == 1)//if AA == 1
+								begin
+									if(is64Bit_i)
+										PC <= ($signed({imm_i, 2'b00}));
+									else
+										PC <= $signed({imm_i, 2'b00}) & 64'hFFFFFFFF;//zero out top 32 bits
+								end
+								else//AA == 0
+								begin
+									if(is64Bit_i)
+										PC <= $signed({imm_i, 2'b00}) + instructionAddress_i;
+									else
+										PC <= ($signed({imm_i, 2'b00}) + instructionAddress_i) & 64'hFFFFFFFF;//zero out top 32 bits
+								end
+							end
+							countReg <= countReg - 1;//decrement the countReg
+						end
+						
+						8: begin
+							//branch
+							if(bit1_i == 1)//if AA == 1
+							begin
+								if(is64Bit_i)
+									PC <= ($signed({imm_i, 2'b00}));
+								else
+									PC <= $signed({imm_i, 2'b00}) & 64'hFFFFFFFF;//zero out top 32 bits
+							end
+							else//AA == 0
+							begin
+								if(is64Bit_i)
+									PC <= $signed({imm_i, 2'b00}) + instructionAddress_i;
+								else
+									PC <= ($signed({imm_i, 2'b00}) + instructionAddress_i) & 64'hFFFFFFFF;//zero out top 32 bits
+							end
+						end
+						
+					endcase
 				end
 				
 				else if(functionalUnitCode_i == XL && opCode_i == 19)
