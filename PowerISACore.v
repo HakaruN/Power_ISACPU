@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 module PowerISACore#(parameter i_DatabusWidth = 32, parameter addressSize = 64, parameter iMemoryAddressSize = 16, parameter instructionSize = 32,
-parameter regImm = 0, parameter immWith = 16, parameter DImmWith = 16,
+parameter regImm = 0, parameter immWith = 24, parameter DImmWith = 16,
 parameter iCacheOffsetSize = 5, iCacheIndexSize = 8, iCacheTagSize = addressSize - (iCacheOffsetSize + iCacheIndexSize), parameter blockSize = 256,	
 parameter formatIndexRange = 5, parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter regWidth = 5, parameter immWidth = 16,
 parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, parameter BranchUnitCode = 3, parameter TrapUnitCode = 4//functional unit code/ID used for dispatch
@@ -98,19 +98,23 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//decode output
 	wire [0:5] decodeStall;
 	wire decodeEnable;
-	wire [0: DImmWith -1] decodeImm;
+	//immediates
+	wire [0:immWith-1] decodeImm;
 	wire decodeImmEnable;
+	//regs
 	wire [0:regWidth-1] decodeReg1, decodeReg2, decodeReg3;
 	wire [0:1] reg1Use, reg2Use, reg3Use;
 	wire decodeReg1Enable, decodeReg2Enable, decodeReg3Enable;
 	wire decodeReg3IsImmediate;
+	//bits
 	wire decodeBit1, decodeBit2;
 	wire decodeBit1Enabled, decodeBit2Enabled;
+	//instruction info
 	wire decodeReg2ValOrZero;
 	wire [0:addressSize-1] decodeInstructionAddress;
 	wire [0:opcodeWidth-1] decodeOpCode;
 	wire [0:xOpCodeWidth-1] decodeXOpcode;
-	wire decodeXOpCodeEnabled;
+	wire decodeXOpcodeEnable;
 	wire [0:2] decodeFunctionalUnitCode;
 	wire [0:formatIndexRange-1] decodeInstructionFormat;
 	DecodeUnit #(
@@ -135,12 +139,12 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	.reg1Enable_o(decodeReg1Enable), .reg2Enable_o(decodeReg2Enable), .reg3Enable_o(decodeReg3Enable),
 	.reg3IsImmediate_o(decodeReg3IsImmediate),
 	.bit1_o(decodeBit1), .bit2_o(decodeBit2),
-	.bit1Enabled_o(decodeBit1Enabled), .bit2Enabled_o(decodeBit2Enabled),
+	.bit1Enable_o(decodeBit1Enabled), .bit2Enable_o(decodeBit2Enabled),
 	.reg2ValOrZero_o(decodeReg2ValOrZero),
 	.instructionAddress_o(decodeInstructionAddress),
 	.opCode_o(decodeOpCode),
 	.xOpcode_o(decodeXOpcode),
-	.xOpCodeEnabled_o(decodeXOpCodeEnabled),
+	.xOpcodeEnable_o(decodeXOpcodeEnable),
 	.functionalUnitCode_o(decodeFunctionalUnitCode),
 	.instructionFormat_o(decodeInstructionFormat)
 	);
@@ -151,14 +155,11 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	wire [0:63] RegOutOperand1, RegOutOperand2, RegOutOperand3;
 	wire [0:regWidth-1] RegOutReg1Address, RegOutReg2Address, RegOutReg3Address;
 	wire [0:immWith-1] RegOutImm;
-	wire RegOutImmEnable;
 	wire RegOutBit1, RegOutBit2;
-	wire RegOutOperand1Enable, RegOutOperand2Enable, RegOutOperand3Enable, RegOutBit1Enable, RegOutBit2Enable;
 	wire RegOutOperand1Writeback, RegOutOperand2Writeback, RegOutOperand3Writeback;
 	wire [0:63] RegOutInstructionAddress;
 	wire [0:opcodeWidth-1] RegOutOpCode;
 	wire [0:xOpCodeWidth-1] RegOutXOpCode;
-	wire RegOutXOpCodeEnabled;
 	wire [0:2] RegOutFunctionalUnitCode;
 	wire [0:formatIndexRange-1] RegOutInstructionFormat;
 	wire RegOutis64Bit;
@@ -176,25 +177,29 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	
 	//Register unit
 	RegisterUnit registerUnit (
-    .clock_i(clock_i), 
-    .reset_i(reset_i), 
-	 //reg read in
-    .enable_i(decodeEnable), 
-    .imm_i(decodeImm), 
-    .reg1_i(decodeReg1), .reg2_i(decodeReg2), .reg3_i(decodeReg3), 
-    .bit1_i(decodeBit1), .bit2_i(decodeBit2), 
-    .immEnable_i(decodeImmEnable), 
-    .reg1Enable_i(decodeReg1Enable), .reg2Enable_i(decodeReg2Enable), .reg3Enable_i(decodeReg3Enable), 
-    .bit1Enable_i(decodeBit1Enabled), .bit2Enable_i(decodeBit2Enabled), 
-    .reg1Use_i(reg1Use), .reg2Use_i(reg2Use), .reg3Use_i(reg3Use), 
-    .reg3IsImmediate_i(decodeReg3IsImmediate), 
-    .reg2ValOrZero_i(decodeReg2ValOrZero), 
-    .instructionAddress_i(decodeInstructionAddress), 
-    .opCode_i(decodeOpCode), 
-    .xOpcode_i(decodeXOpcode), 
-    .xOpCodeEnabled_i(decodeXOpCodeEnabled), 
-	 .functionalUnitCode_i(decodeFunctionalUnitCode),
-    .instructionFormat_i(decodeInstructionFormat), 
+	.clock_i(clock_i), 
+	.reset_i(reset_i), 
+	//reg read in
+	.enable_i(decodeEnable), 
+		//immediate
+	.imm_i(decodeImm), 
+	.immEnable_i(decodeImmEnable), 
+	.reg1_i(decodeReg1), .reg2_i(decodeReg2), .reg3_i(decodeReg3), 
+		//bits
+	.bit1_i(decodeBit1), .bit2_i(decodeBit2), 
+	.bit1Enable_i(decodeBit1Enabled), .bit2Enable_i(decodeBit2Enabled), 
+		//regs
+	.reg1Use_i(reg1Use), .reg2Use_i(reg2Use), .reg3Use_i(reg3Use), 
+	.reg3IsImmediate_i(decodeReg3IsImmediate), 
+	.reg2ValOrZero_i(decodeReg2ValOrZero), 
+	.reg1Enable_i(decodeReg1Enable), .reg2Enable_i(decodeReg2Enable), .reg3Enable_i(decodeReg3Enable), 
+	//instruction info
+	.instructionAddress_i(decodeInstructionAddress), 
+	.opCode_i(decodeOpCode), 
+	.xOpcode_i(decodeXOpcode), 
+	.xOpCodeEnabled_i(decodeXOpcodeEnable),
+	.functionalUnitCode_i(decodeFunctionalUnitCode),
+	.instructionFormat_i(decodeInstructionFormat), 
 	.regReadAddress_i(regReadAddress_i),
 	.regReadEnable_i(regReadEnable_i),
 	.regReadOutput_o(regReadOutput_o),
@@ -210,14 +215,11 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	 .is64Bit_o(RegOutis64Bit),
     .operand1_o(RegOutOperand1), .operand2_o(RegOutOperand2), .operand3_o(RegOutOperand3), 
 	 .reg1Address_o(RegOutReg1Address), .reg2Address_o(RegOutReg2Address), .reg3Address_o(RegOutReg3Address),
-	 .imm_o(RegOutImm), .immEnable_o(RegOutImmEnable),
+	 .imm_o(RegOutImm),
     .bit1_o(RegOutBit1), .bit2_o(RegOutBit2), 
-    .operand1Enable_o(RegOutOperand1Enable), .operand2Enable_o(RegOutOperand2Enable), .operand3Enable_o(RegOutOperand3Enable),
-    .bit1Enable_o(RegOutBit1Enable), .bit2Enable_o(RegOutBit2Enable),
     .instructionAddress_o(RegOutInstructionAddress),
     .opCode_o(RegOutOpCode),
     .xOpCode_o(RegOutXOpCode),
-    .xOpCodeEnabled_o(RegOutXOpCodeEnabled),
 	 .functionalUnitCode_o(RegOutFunctionalUnitCode),
     .instructionFormat_o(RegOutInstructionFormat)
     );
@@ -235,13 +237,12 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		.functionalUnitCode_i(RegOutFunctionalUnitCode),
 		.operand1_i(RegOutOperand1), .operand2_i(RegOutOperand2), .operand3_i(RegOutOperand3),
 		.reg1Address_i(RegOutReg1Address), .reg2Address_i(RegOutReg2Address), .reg3Address_i(RegOutReg3Address),
-		.imm_i(RegOutImm), .immEnable_i(RegOutImmEnable),
+		.imm_i(RegOutImm),
 		.bit1_i(RegOutBit1), .bit2_i(RegOutBit2),
-		.operand1Enable_i(RegOutOperand1Enable), .operand2Enable_i(RegOutOperand2Enable), .operand3Enable_i(RegOutOperand3Enable), .bit1Enable_i(RegOutBit1Enable), .bit2Enable_i(RegOutBit2Enable),
 		.operand1Writeback_i(RegOutOperand1Writeback), .operand2Writeback_i(RegOutOperand2Writeback), .operand3Writeback_i(RegOutOperand3Writeback),
 		.instructionAddress_i(RegOutInstructionAddress),
 		.opCode_i(RegOutOpCode), .xOpCode_i(RegOutXOpCode),
-		.xOpCodeEnabled_i(RegOutXOpCodeEnabled), .instructionFormat_i(RegOutInstructionFormat),
+		.instructionFormat_i(RegOutInstructionFormat),
 		//command out
 		.loadStoreStall(ExecLoadStoreStallOut), .branchStall(ExecBranchStallOut),
 		//reg writeback

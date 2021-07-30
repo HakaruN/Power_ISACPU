@@ -8,12 +8,15 @@
 //to the next pipeline stage
 //TODO: Implement a trap handler
 //////////////////////////////////////////////////////////////////////////////////
-module DecodeUnit#( parameter instructionWidth = 32, parameter addressSize = 64, parameter formatIndexRange = 5,
+module DecodeUnit#(
+//instruction formats
 parameter A = 1, parameter B = 2, parameter D = 3, parameter DQ = 4, parameter DS = 5, parameter DX = 6, parameter I = 7, parameter M = 8,
 parameter MD = 9, parameter MDS = 10, parameter SC = 11, parameter VA = 12, parameter VC = 13, parameter VX = 14, parameter X = 15, parameter XFL = 16,
 parameter XFX = 17, parameter XL = 18, parameter XO = 19, parameter XS = 20, parameter XX2 = 21, parameter XX3 = 22, parameter XX4 = 23, parameter Z22 = 24,
 parameter Z23 = 25, parameter INVALID = 0,
-parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter XoOpCodeWidth = 9, parameter regWidth = 5, parameter immWidth = 16,
+//data widths
+parameter instructionWidth = 32, parameter addressSize = 64, parameter formatIndexRange = 5,
+parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter XoOpCodeWidth = 9, parameter regWidth = 5, parameter immWidth = 24,
 parameter DSImmWidth = 14, parameter DImmWith = 16, parameter DQImmWidth = 12, parameter MDImmWidth = 6,
 parameter regImm = 0, parameter regRead = 1, parameter regWrite = 2, parameter regReadWrite = 3,//indicates if a registers use is immediate, read, write or both
 parameter numStallLines = 6,//should be the number of format specific decoders in the decode unit
@@ -29,19 +32,19 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	output wire [0:numStallLines-1] stall_o,//a stall line for each format decoder
 	//data out
 	output wire enable_o,
-	output wire [0:DImmWith-1] imm_o,
+	output wire [0:immWidth-1] imm_o,
 	output wire immEnable_o,
 	output wire [0:regWidth-1] reg1_o, reg2_o, reg3_o,
-	output wire reg1Enable_o, reg2Enable_o, reg3Enable_o,
 	output wire [0:1] reg1Use_o, reg2Use_o, reg3Use_o,
+	output wire reg1Enable_o, reg2Enable_o, reg3Enable_o,
 	output wire reg3IsImmediate_o,
 	output wire bit1_o, bit2_o,
-	output wire bit1Enabled_o, bit2Enabled_o,
+	output wire bit1Enable_o, bit2Enable_o,
 	output wire reg2ValOrZero_o,
 	output wire [0:addressSize-1] instructionAddress_o,
 	output wire [0:opcodeWidth-1] opCode_o,
 	output wire [0:xOpCodeWidth-1] xOpcode_o,
-	output wire xOpCodeEnabled_o,
+	output wire xOpcodeEnable_o,
 	output wire [0:2] functionalUnitCode_o,
 	output wire [0:formatIndexRange-1] instructionFormat_o
 	);
@@ -231,7 +234,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	.dReg1_i(DReg1), .dReg2_i(DReg2),
 	.dreg1Use_i(DReg1Use), .dreg2Use_i(DReg2Use),
 	.dImm_i(DImm),
-	.dImmFormat2_i(DImmFormat),
+	.dimmFormat2_i(DImmFormat),
 	.dReg2ValOrZero_i(DReg2ValOrZero),
 	.dfunctionalUnitCode_i(DfunctionalUnitCode),
 	.dImmShiftUpBytes_i(DFshiftImmUpBytes),

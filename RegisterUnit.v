@@ -3,7 +3,7 @@
 //NOTE: Reg unit is inadequetly tested, testing needs to ensure RAW hazards are avoided
 //////////////////////////////////////////////////////////////////////////////////
 module RegisterUnit #(parameter instructionWidth = 32, parameter addressSize = 64,
-parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter immWith = 16, parameter regWidth = 5, parameter numRegs = 2**regWidth, parameter formatIndexRange = 5,
+parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter immWith = 24, parameter regWidth = 5, parameter numRegs = 2**regWidth, parameter formatIndexRange = 5,
 parameter regImm = 0, parameter regRead = 1, parameter regWrite = 2, parameter regReadWrite = 3,//indicates if a registers use is immediate, read, write or both
 parameter A = 1, parameter B = 2, parameter D = 3, parameter DQ = 4, parameter DS = 5, parameter DX = 6, parameter I = 7, parameter M = 8,
 parameter MD = 9, parameter MDS = 10, parameter SC = 11, parameter VA = 12, parameter VC = 13, parameter VX = 14, parameter X = 15, parameter XFL = 16,
@@ -16,13 +16,19 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire reset_i,
 	//data in (reg read)
 	input wire enable_i,
+		//imm
 	input wire [0:immWith-1] imm_i,
+	input wire immEnable_i,
+		//reg
 	input wire [0:regWidth-1] reg1_i, reg2_i, reg3_i,
-	input wire bit1_i, bit2_i,
-	input wire immEnable_i, reg1Enable_i, reg2Enable_i, reg3Enable_i, bit1Enable_i, bit2Enable_i,
+	input wire reg1Enable_i, reg2Enable_i, reg3Enable_i,
 	input wire [0:1] reg1Use_i, reg2Use_i, reg3Use_i,
 	input wire reg3IsImmediate_i,
 	input wire reg2ValOrZero_i,
+		//bits
+	input wire bit1_i, bit2_i,
+	input wire bit1Enable_i, bit2Enable_i,
+		//instructuin info
 	input wire [0:addressSize-1] instructionAddress_i,
 	input wire [0:opcodeWidth-1] opCode_i,
 	input wire [0:xOpCodeWidth-1] xOpcode_i,
@@ -47,14 +53,11 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	output reg [0:63] operand1_o, operand2_o, operand3_o,
 	output reg [0:regWidth-1] reg1Address_o, reg2Address_o, reg3Address_o,
 	output reg [0:immWith-1] imm_o,
-	output reg immEnable_o,
 	output reg bit1_o, bit2_o,
-	output reg operand1Enable_o, operand2Enable_o, operand3Enable_o, bit1Enable_o, bit2Enable_o,
 	output reg operand1Writeback_o, operand2Writeback_o, operand3Writeback_o,
 	output reg [0:63] instructionAddress_o,
 	output reg [0:opcodeWidth-1] opCode_o,
 	output reg [0:xOpCodeWidth-1] xOpCode_o,
-	output reg xOpCodeEnabled_o,
 	output reg [0:2] functionalUnitCode_o,
 	output reg [0:formatIndexRange-1] instructionFormat_o
 	);
@@ -121,25 +124,24 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 			begin
 				enable_o <= 1;
 				stall_o <= 0;			
-			
-				if(bit1Enable_i)//output bits
+				if(bit1Enable_i == 1)//output bits
 				begin
-					bit1_o <= bit1_i; bit1Enable_o <= 1;
+					bit1_o <= bit1_i;
 				end
-				else
-					bit1Enable_o <= 0;
 					
-				if(bit2Enable_i)
+				if(bit2Enable_i == 1)
 				begin
-					bit2_o <= bit2_i; bit2Enable_o <= 1;
+					bit2_o <= bit2_i;
 				end
-				else
-					bit2Enable_o <= 0;
+
 					
 				//pass through instruction data
 				opCode_o <= opCode_i;
-				xOpCode_o <= xOpcode_i;
-				xOpCodeEnabled_o <= xOpCodeEnabled_i;
+				if(xOpCodeEnabled_i == 1)
+				begin
+					xOpCode_o <= xOpcode_i;
+				end
+				
 				instructionFormat_o <= instructionFormat_i;
 				instructionAddress_o <= instructionAddress_i;
 				functionalUnitCode_o <= functionalUnitCode_i;
@@ -148,26 +150,18 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 				if(immEnable_i == 1)
 				begin
 					imm_o <= imm_i;
-					immEnable_o <= 1;
 				end
-				else
-					immEnable_o <= 0;
 				
 				//resolve register reads
 				//Imm = 0, Read = 1, Write = 2, Read/Write = 3
 				if(reg1Enable_i == 1)
 				begin
 					case(reg1Use_i)
-						0:begin operand1_o <= reg1_i; operand1Enable_o <= 1; operand1Writeback_o <= 0; end//reg = imm
-						1:begin operand1_o <= FXRegFile[reg1_i]; operand1Enable_o <= 1; operand1Writeback_o <= 0; end//reg = read
-						2:begin operand1_o <= reg1_i; operand1Enable_o <= 1; operand1Writeback_o <= 1; reg1Address_o <= reg1_i; FXPendingWritebackTab[reg1_i] <= 1; end//reg = write
-						3:begin operand1_o <= FXRegFile[reg1_i]; operand1Enable_o <= 1; operand1Writeback_o <= 1; reg1Address_o <= reg1_i; FXPendingWritebackTab[reg1_i] <= 1; end//reg = read/write
+						0:begin operand1_o <= reg1_i; operand1Writeback_o <= 0; end//reg = imm
+						1:begin operand1_o <= FXRegFile[reg1_i]; operand1Writeback_o <= 0; end//reg = read
+						2:begin operand1_o <= reg1_i; operand1Writeback_o <= 1; reg1Address_o <= reg1_i; FXPendingWritebackTab[reg1_i] <= 1; end//reg = write
+						3:begin operand1_o <= FXRegFile[reg1_i]; operand1Writeback_o <= 1; reg1Address_o <= reg1_i; FXPendingWritebackTab[reg1_i] <= 1; end//reg = read/write
 					endcase
-					operand1Enable_o <= 1;
-				end
-				else
-				begin
-					operand1Enable_o <= 0;
 				end
 					
 				if(reg2Enable_i == 1)
@@ -181,20 +175,20 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 							//$display("Reg 2 is zero");
 							operand2_o <= 0;	
 								case(reg2Use_i)
-									0:begin operand2_o <=0; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = imm
-									1:begin operand2_o <= 0; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = read
-									2:begin operand2_o <= 0; operand2Enable_o <= 1; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; FXPendingWritebackTab[reg2_i] <= 1; end//reg = write
-									3:begin operand2_o <= 0; operand2Enable_o <= 1; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; FXPendingWritebackTab[reg2_i] <= 1; end//reg = read/write
+									0:begin operand2_o <=0; operand2Writeback_o <= 0; end//reg = imm
+									1:begin operand2_o <= 0; operand2Writeback_o <= 0; end//reg = read
+									2:begin operand2_o <= 0; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; FXPendingWritebackTab[reg2_i] <= 1; end//reg = write
+									3:begin operand2_o <= 0; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; FXPendingWritebackTab[reg2_i] <= 1; end//reg = read/write
 								endcase						
 						end
 						else//reg2 val or zero == 1 and reg2 != 0
 						begin
 							//$display("Reg 2 is not zero");
 							case(reg2Use_i)
-								0:begin operand2_o <= reg2_i; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = imm
-								1:begin operand2_o <= FXRegFile[reg2_i]; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = read
-								2:begin operand2_o <= reg2_i; operand2Enable_o <= 1; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; FXPendingWritebackTab[reg2_i] <= 1; end//reg = write
-								3:begin operand2_o <= FXRegFile[reg2_i]; operand2Enable_o <= 1; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; FXPendingWritebackTab[reg2_i] <= 1; end//reg = read/write
+								0:begin operand2_o <= reg2_i; operand2Writeback_o <= 0; end//reg = imm
+								1:begin operand2_o <= FXRegFile[reg2_i]; operand2Writeback_o <= 0; end//reg = read
+								2:begin operand2_o <= reg2_i; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; FXPendingWritebackTab[reg2_i] <= 1; end//reg = write
+								3:begin operand2_o <= FXRegFile[reg2_i]; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; FXPendingWritebackTab[reg2_i] <= 1; end//reg = read/write
 							endcase						
 						end
 					end
@@ -202,18 +196,12 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 					begin//reg2 val or zero == 0
 						//$display("reg2ValorZero = 0");
 						case(reg2Use_i)
-							0:begin operand2_o <= reg2_i; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = imm
-							1:begin operand2_o <= FXRegFile[reg2_i]; operand2Enable_o <= 1; operand2Writeback_o <= 0; end//reg = read
-							2:begin operand2_o <= reg2_i; operand2Enable_o <= 1; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; FXPendingWritebackTab[reg2_i] <= 1; end//reg = write
-							3:begin operand2_o <= FXRegFile[reg2_i]; operand2Enable_o <= 1; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; FXPendingWritebackTab[reg2_i] <= 1; end//reg = read/write
+							0:begin operand2_o <= reg2_i; operand2Writeback_o <= 0; end//reg = imm
+							1:begin operand2_o <= FXRegFile[reg2_i]; operand2Writeback_o <= 0; end//reg = read
+							2:begin operand2_o <= reg2_i; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; FXPendingWritebackTab[reg2_i] <= 1; end//reg = write
+							3:begin operand2_o <= FXRegFile[reg2_i]; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; FXPendingWritebackTab[reg2_i] <= 1; end//reg = read/write
 						endcase
 					end
-					operand2Enable_o <= 1;
-				end
-				else
-				begin
-					operand2Enable_o <= 0;
-					//$display("reg2 disabled");
 				end
 				
 				if(reg3Enable_i == 1)
@@ -221,30 +209,28 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 					if(reg3IsImmediate_i == 1)
 					begin
 						case(reg3Use_i)
-							0:begin operand3_o <= reg3_i; operand3Enable_o <= 1; operand3Writeback_o <= 0; end//reg = imm
-							1:begin operand3_o <= reg3_i; operand3Enable_o <= 1; operand3Writeback_o <= 0; end//reg = read
-							2:begin operand3_o <= reg3_i; operand3Enable_o <= 1; operand3Writeback_o <= 1; reg3Address_o <= reg3_i; FXPendingWritebackTab[reg3_i] <= 1; end//reg = write
-							3:begin operand3_o <= reg3_i; operand3Enable_o <= 1; operand3Writeback_o <= 1; reg3Address_o <= reg3_i; FXPendingWritebackTab[reg3_i] <= 1; end//reg = read/write
+							0:begin operand3_o <= reg3_i; operand3Writeback_o <= 0; end//reg = imm
+							1:begin operand3_o <= reg3_i; operand3Writeback_o <= 0; end//reg = read
+							2:begin operand3_o <= reg3_i; operand3Writeback_o <= 1; reg3Address_o <= reg3_i; FXPendingWritebackTab[reg3_i] <= 1; end//reg = write
+							3:begin operand3_o <= reg3_i; operand3Writeback_o <= 1; reg3Address_o <= reg3_i; FXPendingWritebackTab[reg3_i] <= 1; end//reg = read/write
 						endcase
 					end
 					else
 					begin
 						case(reg3Use_i)
-							0:begin operand3_o <= reg3_i; operand3Enable_o <= 1; operand3Writeback_o <= 0; end//reg = imm
-							1:begin operand3_o <= FXRegFile[reg3_i]; operand3Enable_o <= 1; operand3Writeback_o <= 0; end//reg = read
-							2:begin operand3_o <= reg3_i; operand3Enable_o <= 1; operand3Writeback_o <= 1; reg3Address_o <= reg3_i; FXPendingWritebackTab[reg3_i] <= 1; end//reg = write
-							3:begin operand3_o <= FXRegFile[reg3_i]; operand3Enable_o <= 1; operand3Writeback_o <= 1; reg3Address_o <= reg3_i; FXPendingWritebackTab[reg3_i] <= 1; end//reg = read/write
+							0:begin operand3_o <= reg3_i; operand3Writeback_o <= 0; end//reg = imm
+							1:begin operand3_o <= FXRegFile[reg3_i]; operand3Writeback_o <= 0; end//reg = read
+							2:begin operand3_o <= reg3_i; operand3Writeback_o <= 1; reg3Address_o <= reg3_i; FXPendingWritebackTab[reg3_i] <= 1; end//reg = write
+							3:begin operand3_o <= FXRegFile[reg3_i]; operand3Writeback_o <= 1; reg3Address_o <= reg3_i; FXPendingWritebackTab[reg3_i] <= 1; end//reg = read/write
 						endcase
-
 					end
-					operand3Enable_o <= 1;
 				end
-				else
-					operand3Enable_o <= 0;
-				end
+			end
 		end
 		else
+		begin
 			enable_o <= 0;
+		end
 		
 		
 		//reg writeback

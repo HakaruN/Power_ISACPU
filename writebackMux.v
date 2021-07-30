@@ -5,7 +5,7 @@ module WritebackMux #(
 parameter memoryBlockSize = 128, parameter numMemoryBlocks = 128,
 parameter loadByte = 1, parameter loadHalfWord = 2, parameter loadWord = 3, parameter loadDoubleword = 4, parameter loadQuadWord = 5,
 parameter storeByte = 1, parameter storeHalfWord = 2, parameter storeWord = 3, parameter storeDoubleWord = 4, parameter storeQuadWord = 5,
-parameter addressSize = 64, parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter immWith = 16, parameter regWidth = 5, parameter numRegs = 2**regWidth, parameter formatIndexRange = 5,
+parameter addressSize = 64, parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter immWith = 24, parameter regWidth = 5, parameter numRegs = 2**regWidth, parameter formatIndexRange = 5,
 parameter A = 1, parameter B = 2, parameter D = 3, parameter DQ = 4, parameter DS = 5, parameter DX = 6, parameter I = 7, parameter M = 8,
 parameter MD = 9, parameter MDS = 10, parameter SC = 11, parameter VA = 12, parameter VC = 13, parameter VX = 14, parameter X = 15, parameter XFL = 16,
 parameter XFX = 17, parameter XL = 18, parameter XO = 19, parameter XS = 20, parameter XX2 = 21, parameter XX3 = 22, parameter XX4 = 23, parameter Z22 = 24,

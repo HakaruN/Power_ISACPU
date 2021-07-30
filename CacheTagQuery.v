@@ -61,7 +61,7 @@ module CacheTagQuery #( parameter offsetSize = 5, parameter indexSize = 8, param
 	
 		if(flushPipeline_i == 1)
 		begin
-			$display("Stage 1 flushing pipeline");
+			//$display("Stage 1 flushing pipeline");
 			bypassTag <= 0;
 			bypassIndex <= 0;
 			bypassOffset <= 0;
@@ -80,16 +80,16 @@ module CacheTagQuery #( parameter offsetSize = 5, parameter indexSize = 8, param
 				bypassTag <= tag_i;
 				bypassIndex <= index_i;
 				bypassOffset <= offset_i;
-				$display("Stage 1 updating fetch buffers");
+				//$display("Stage 1 updating fetch buffers");
 			end
 			else if((fetchEnable_i == 0) && (updateEnable_i == 1))
 			begin
-				$display("Writing to tag memory");			
+				//$display("Writing to tag memory");			
 			end
 			if((fetchEnable_i == 1) && (updateEnable_i == 1))
 			begin
 				//TODO throw an error
-				$display("TIMING ERROR: Tag memory canot read and write at the same time (collision is possible)");
+				//$display("TIMING ERROR: Tag memory canot read and write at the same time (collision is possible)");
 			end
 			
 			//write out buffers
@@ -99,7 +99,7 @@ module CacheTagQuery #( parameter offsetSize = 5, parameter indexSize = 8, param
 				index_o <= bypassIndex;
 				offset_o <= bypassOffset;
 				enable_o <= bypassEnable;
-				$display("Stage 1 writing out buffers");
+				//$display("Stage 1 writing out buffers");
 			end
 			else
 				enable_o <= 0;

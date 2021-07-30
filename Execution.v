@@ -4,7 +4,7 @@
 //the idea is that it just allows the functional units to be cleanly grouped
 //////////////////////////////////////////////////////////////////////////////////
 module Execution#(parameter addressSize = 64,
-parameter regWidth = 5, parameter regImm = 0, parameter immWith = 16, parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter formatIndexRange = 5,
+parameter regWidth = 5, parameter regImm = 0, parameter immWith = 24, parameter opcodeWidth = 6, parameter xOpCodeWidth = 10, parameter formatIndexRange = 5,
 parameter A = 1, parameter B = 2, parameter D = 3, parameter DQ = 4, parameter DS = 5, parameter DX = 6, parameter I = 7, parameter M = 8,
 parameter MD = 9, parameter MDS = 10, parameter SC = 11, parameter VA = 12, parameter VC = 13, parameter VX = 14, parameter X = 15, parameter XFL = 16,
 parameter XFX = 17, parameter XL = 18, parameter XO = 19, parameter XS = 20, parameter XX2 = 21, parameter XX3 = 22, parameter XX4 = 23, parameter Z22 = 24,
@@ -21,14 +21,11 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire [0:63] operand1_i, operand2_i, operand3_i,
 	input wire [0:regWidth-1] reg1Address_i, reg2Address_i, reg3Address_i,
 	input wire [0:immWith-1] imm_i,
-	input wire immEnable_i,
 	input wire bit1_i, bit2_i,
-	input wire operand1Enable_i, operand2Enable_i, operand3Enable_i, bit1Enable_i, bit2Enable_i,
 	input wire operand1Writeback_i, operand2Writeback_i, operand3Writeback_i,
 	input wire [0:63] instructionAddress_i,
 	input wire [0:opcodeWidth-1] opCode_i,
 	input wire [0:xOpCodeWidth-1] xOpCode_i,
-	input wire xOpCodeEnabled_i,
 	input wire [0:formatIndexRange-1] instructionFormat_i,
 	//command out
 	output wire loadStoreStall, output wire branchStall,
@@ -57,12 +54,10 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		.reg1Address_i(reg1Address_i), .reg2Address_i(reg2Address_i), .reg3Address_i(reg3Address_i),
 		.imm_i(imm_i),
 		.bit1_i(bit1_i), .bit2_i(bit2_i),
-		.operand1Enable_i(operand1Enable_i), .operand2Enable_i(operand2Enable_i), .operand3Enable_i(operand3Enable_i), .bit1Enable_i(bit1Enable_i), .bit2Enable_i(bit2Enable_i),
 		.operand1Writeback_i(operand1Writeback_i), .operand2Writeback_i(operand2Writeback_i), .operand3Writeback_i(operand3Writeback_i),
 		.instructionAddress_i(instructionAddress_i),
 		.opCode_i(opCode_i),
 		.xOpCode_i(xOpCode_i),
-		.xOpCodeEnabled_i(xOpCodeEnabled_i),	
 		.instructionFormat_i(instructionFormat_i),
 		//outputs
 		.functionalUnitCode_o(FXFunctionalUnitCode),
@@ -88,7 +83,6 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	.instructionAddress_i(instructionAddress_i),
 	.opCode_i(opCode_i),
 	.xOpCode_i(xOpCode_i),
-	.xOpCodeEnabled_i(xOpCodeEnabled_i),	
 	.instructionFormat_i(instructionFormat_i),
 	.operand1_i(operand1_i), .operand2_i(operand2_i), .operand3_i(operand3_i),
 	.reg1Address_i(reg1Address_i), .reg2Address_i(reg2Address_i), .reg3Address_i(reg3Address_i),
@@ -100,6 +94,9 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	.reg1WritebackEnable_o(LSReg1WritebackEnable), .reg2WritebackEnable_o(LSReg2WritebackEnable),
 	.reg1WritebackAddress_o(LSReg1WritebackAddress), .reg2WritebackAddress_o(LSReg2WritebackAddress),
 	.reg1WritebackVal_o(LSReg1WritebackValue), .reg2WritebackVal_o(LSReg2WritebackValue)
+	);
+	
+	BranchUnit branchUnit(
 	);
 	
 	//writeback merge queue

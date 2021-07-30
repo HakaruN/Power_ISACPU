@@ -3,7 +3,7 @@
 //Takes the outputs of the parallel decoders and multiplexes the instruction to a single bus
 //////////////////////////////////////////////////////////////////////////////////
 module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, parameter addressSize = 64,
-	parameter DImmWidth = 16, parameter DQimmWidth = 12, parameter DSimmWidth = 14, parameter MDimmWidth = 6,
+	parameter DImmWidth = 16, parameter DQimmWidth = 12, parameter DSimmWidth = 14, parameter MDimmWidth = 6, parameter immWidth = 24,
 	parameter XxoOpcodeWidth = 10, parameter XoOpCodeWidth = 9,
 	//instrcution format
 	parameter formatIndexRange = 5,
@@ -20,7 +20,7 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 	input wire [0:regWidth-1] dReg1_i, dReg2_i,
 	input wire [0:1] dreg1Use_i, dreg2Use_i,
 	input wire [0:DImmWidth-1] dImm_i,
-	input wire dImmFormat2_i,
+	input wire dimmFormat2_i,
 	input wire dReg2ValOrZero_i,
 	input wire [0:2] dfunctionalUnitCode_i,
 	input wire [0:1] dImmShiftUpBytes_i,
@@ -58,7 +58,7 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 	input wire xOit1_i, xOBit2_i,	
 	//outputs 
 	output reg enable_o,
-	output reg [0:DImmWidth-1] imm_o,//use DImmWidth as the width as this is the largest imm format posible in this ISA version
+	output reg [0:immWidth-1] imm_o,//use DImmWidth as the width as this is the largest imm format posible in this ISA version
 	output reg immEnable_o,
 	output reg [0:regWidth-1] reg1_o, reg2_o, reg3_o,
 	output reg [0:1] reg1Use_o, reg2Use_o, reg3Use_o,
@@ -94,7 +94,7 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 			reg1Use_o <= dreg1Use_i; reg2Use_o <= dreg2Use_i; reg3Use_o<= 0;
 			//imm
 			immEnable_o <= 1;
-			if(dImmFormat2_i == 1)
+			if(dimmFormat2_i == 1)
 			begin
 				case(dImmShiftUpBytes_i)
 					0:imm_o <= $signed({dImm_i});

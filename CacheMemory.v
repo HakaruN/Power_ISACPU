@@ -59,7 +59,7 @@ module CacheMemory #( parameter offsetSize = 5, parameter indexSize = 8, paramet
 	begin	
 		if(flushPipeline_i == 1)
 		begin
-			$display("Stage 3 flushing pipeline");
+			//$display("Stage 3 flushing pipeline");
 			bypassTag <= 0;
 			bypassIndex <= 0;
 			bypassOffset <= 0;
@@ -79,12 +79,12 @@ module CacheMemory #( parameter offsetSize = 5, parameter indexSize = 8, paramet
 				bypassTag <= tag_i;
 				bypassIndex <= index_i;
 				bypassOffset <= offset_i;
-				$display("Stage 3 cycle 1 fetching");
+				//$display("Stage 3 cycle 1 fetching");
 			end
-			else if((fetchEnable_i == 0) && (updateEnable_i == 1))//if were updating and not fetching
-				$display("Writing to instruction L1I cache");
-			else if((fetchEnable_i == 1) && (updateEnable_i == 1))
-				$display("TIMING ERROR: Instruction cache memory canot read and write at the same time (collision is possible)");
+			//else if((fetchEnable_i == 0) && (updateEnable_i == 1))//if were updating and not fetching
+				//$display("Writing to instruction L1I cache");
+			//else if((fetchEnable_i == 1) && (updateEnable_i == 1))
+				//$display("TIMING ERROR: Instruction cache memory canot read and write at the same time (collision is possible)");
 				
 			//write out buffers
 			if((bypassEnable == 1) && (updateEnable_i == 0) && (fetchUnitStall_i == 0))
@@ -94,7 +94,7 @@ module CacheMemory #( parameter offsetSize = 5, parameter indexSize = 8, paramet
 				offset_o <= bypassOffset;
 				enable_o <= bypassEnable;
 				cacheline_o <= cachelineFromMemory;
-				$display("Stage 3 writing buffers out");
+				//$display("Stage 3 writing buffers out");
 			end
 			else if((bypassEnable == 0) && (updateEnable_i == 1) && (fetchUnitStall_i == 0))
 			begin
@@ -103,11 +103,11 @@ module CacheMemory #( parameter offsetSize = 5, parameter indexSize = 8, paramet
 				offset_o <= newOffset_i;
 				enable_o <= updateEnable_i;
 				cacheline_o <= newCacheline_i;
-				$display("Stage 3 updating cachelines");
+				//$display("Stage 3 updating cachelines");
 			end
 			else if((bypassEnable == 1) && (updateEnable_i == 1) && (fetchUnitStall_i == 0))
 			begin
-				$display("TIMING ERROR: Cache memory canot read and write at the same time (collision is possible)");
+				//$display("TIMING ERROR: Cache memory canot read and write at the same time (collision is possible)");
 			end
 			else
 				enable_o <= 0;		
