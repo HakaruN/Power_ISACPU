@@ -1,6 +1,10 @@
 # Power_ISA CPU
 This project is for my Masters Dissertation. Documentation will be provided in the form of my Dissertation report (essentially a report describing the design, development and operations of the processor)
 
+IMPORTANT NOTE:
+This CPU is designed using Xilinx ISE design suit, it uses xilinx IP blocks for the queues in the memory controller and for the block RAM in the L1-I data memory.
+These must be replaced if not using Xilinx tools.
+
 TODO:
 Fix LoadStore unit because it's not commiting to memory and not reading from memory and/or outputting to the reg writeback
 Implement more test hanesses for the later pipeline stages (after reg file)
