@@ -73,6 +73,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	wire LSReg1WritebackEnable, LSReg2WritebackEnable;
 	wire [0:regWidth-1] LSReg1WritebackAddress, LSReg2WritebackAddress;
 	wire [0:addressSize-1] LSReg1WritebackValue, LSReg2WritebackValue;
+		
 	//LoadStore unit
 	LoadStoreUnit loadStoreUnit(
 	//command
@@ -81,12 +82,11 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	.enable_i(enable_i),
 	//data in
 	.functionalUnitCode_i(functionalUnitCode_i),
-	.instructionAddress_i(instructionAddress_i),
 	.opCode_i(opCode_i),
 	.xOpCode_i(xOpCode_i),
 	.instructionFormat_i(instructionFormat_i),
 	.operand1_i(operand1_i), .operand2_i(operand2_i), .operand3_i(operand3_i),
-	.reg1Address_i(reg1Address_i), .reg2Address_i(reg2Address_i), .reg3Address_i(reg3Address_i),
+	.reg1Address_i(reg1Address_i), .reg2Address_i(reg2Address_i),
 	.imm_i(imm_i),
 	//command out
 	.stall_o(loadStoreStall),
@@ -143,6 +143,4 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		.reg1WritebackAddress_o(reg1WritebackAddress_o), .reg2WritebackAddress_o(reg2WritebackAddress_o),
 		.reg1WritebackVal_o(reg1WritebackVal_o), .reg2WritebackVal_o(reg2WritebackVal_o)
 	);
-	
-
 endmodule

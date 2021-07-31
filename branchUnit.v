@@ -109,48 +109,48 @@ parameter Z23 = 25, parameter INVALID = 0
 						linkReg <= instructionAddress_i + 4;
 					end
 				
-					case(operand1_i)
-						0: begin //decrement the CTR then branch if the decremented CRT != 0 (0:63 in 64b mode and 32:63 in 32b mode) and CR[operand2_i] == 0														
-							if((countReg - 1) != 0 && conditionReg[operand2_i + 32] == 0)
+					case(operand1_i[63-:5])
+					0: begin //decrement the CTR then branch if the decremented CRT != 0 (0:63 in 64b mode and 32:63 in 32b mode) and CR[operand2_i] == 0														
+						if((countReg - 1) != 0 && conditionReg[operand2_i + 32] == 0)
+						begin
+							if(bit1_i == 1)//if AA == 1
 							begin
-								if(bit1_i == 1)//if AA == 1
-								begin
-									if(is64Bit_i)
-										PC <= ($signed({imm_i, 2'b00}));
-									else
-										PC <= $signed({imm_i, 2'b00}) & 64'hFFFFFFFF;//zero out top 32 bits
-								end
-								else//AA == 0
-								begin
-									if(is64Bit_i)
-										PC <= $signed({imm_i, 2'b00}) + instructionAddress_i;
-									else
-										PC <= ($signed({imm_i, 2'b00}) + instructionAddress_i) & 64'hFFFFFFFF;//zero out top 32 bits
-								end
+								if(is64Bit_i)
+									PC <= ($signed({imm_i, 2'b00}));
+								else
+									PC <= $signed({imm_i, 2'b00}) & 64'hFFFFFFFF;//zero out top 32 bits
 							end
-							countReg <= countReg - 1;//decrement the countReg
+							else//AA == 0
+							begin
+								if(is64Bit_i)
+									PC <= $signed({imm_i, 2'b00}) + instructionAddress_i;
+								else
+									PC <= ($signed({imm_i, 2'b00}) + instructionAddress_i) & 64'hFFFFFFFF;//zero out top 32 bits
+							end
 						end
+						countReg <= countReg - 1;//decrement the countReg
+					end
 						
-						1: begin //decrement the CTR then branch if the decremented CRT == 0 (0:63 in 64b mode and 32:63 in 32b mode) and CR[operand2_i] == 0
-							if((countReg - 1) == 0 && conditionReg[operand2_i + 32] == 0)
+					1: begin //decrement the CTR then branch if the decremented CRT == 0 (0:63 in 64b mode and 32:63 in 32b mode) and CR[operand2_i] == 0
+						if((countReg - 1) == 0 && conditionReg[operand2_i + 32] == 0)
+						begin
+							if(bit1_i == 1)//if AA == 1
 							begin
-								if(bit1_i == 1)//if AA == 1
-								begin
-									if(is64Bit_i)
-										PC <= ($signed({imm_i, 2'b00}));
-									else
-										PC <= $signed({imm_i, 2'b00}) & 64'hFFFFFFFF;//zero out top 32 bits
-								end
-								else//AA == 0
-								begin
-									if(is64Bit_i)
-										PC <= $signed({imm_i, 2'b00}) + instructionAddress_i;
-									else
-										PC <= ($signed({imm_i, 2'b00}) + instructionAddress_i) & 64'hFFFFFFFF;//zero out top 32 bits
-								end
+								if(is64Bit_i)
+									PC <= ($signed({imm_i, 2'b00}));
+								else
+									PC <= $signed({imm_i, 2'b00}) & 64'hFFFFFFFF;//zero out top 32 bits
 							end
-							countReg <= countReg - 1;//decrement the countReg
+							else//AA == 0
+							begin
+								if(is64Bit_i)
+									PC <= $signed({imm_i, 2'b00}) + instructionAddress_i;
+								else
+									PC <= ($signed({imm_i, 2'b00}) + instructionAddress_i) & 64'hFFFFFFFF;//zero out top 32 bits
+							end
 						end
+						countReg <= countReg - 1;//decrement the countReg
+					end
 						
 						2: begin //branch if the CR[operand2_i] == 0
 							if(conditionReg[operand2_i + 32] == 0)
