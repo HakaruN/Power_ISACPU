@@ -39,6 +39,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	reg stage1Enable;
 	reg isStore;//if ==1, its a load else it's a store
 	reg [0:63] operand1_1, /*operand2_1,*/ operand3_1;
+	reg isByteReversal;
 	//reg [0:immWith-1] imm_1;
 	reg [0:regWidth-1] reg1Address_1, reg2Address_1;
 	reg [0:2] loadStoreFormat1;
@@ -67,46 +68,46 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 				blockIndex1 <= (operand2_i + imm_i) % 16;//the index in the block to load
 			case(opCode_i)//parse D format Load/Stores
 				32: begin //Load Word and Zero
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0;	isAlgebraic1 <= 0; loadStoreFormat1 <= Word;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0;	isAlgebraic1 <= 0; loadStoreFormat1 <= Word; isByteReversal <= 0;
 				end
 				33: begin //Load Word and Zero with Update
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1;	isAlgebraic1 <= 0; loadStoreFormat1 <= Word;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1;	isAlgebraic1 <= 0; loadStoreFormat1 <= Word; isByteReversal <= 0;
 				end
 				34: begin //Load Byte and Zero
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0;	isAlgebraic1 <= 0; loadStoreFormat1 <= Byte;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0;	isAlgebraic1 <= 0; loadStoreFormat1 <= Byte; isByteReversal <= 0;
 				end
 				35: begin //Load Byte and Zero with Update
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1;	isAlgebraic1 <= 0; loadStoreFormat1 <= Byte;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1;	isAlgebraic1 <= 0; loadStoreFormat1 <= Byte; isByteReversal <= 0;
 				end
 				36: begin //Store Word
-					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 0;	isAlgebraic1 <= 0; loadStoreFormat1 <= Word;
+					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 0;	isAlgebraic1 <= 0; loadStoreFormat1 <= Word; isByteReversal <= 0;
 				end
 				37: begin //Store Word with Update
-					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 1;	isAlgebraic1 <= 0; loadStoreFormat1 <= Word;
+					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 1;	isAlgebraic1 <= 0; loadStoreFormat1 <= Word; isByteReversal <= 0;
 				end
 				38: begin //Store Byte
-					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 0;	isAlgebraic1 <= 0; loadStoreFormat1 <= Byte;
+					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 0;	isAlgebraic1 <= 0; loadStoreFormat1 <= Byte; isByteReversal <= 0;
 				end
 				39: begin //Store Byte with Update
-					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 1;	isAlgebraic1 <= 0; loadStoreFormat1 <= Byte;
+					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 1;	isAlgebraic1 <= 0; loadStoreFormat1 <= Byte; isByteReversal <= 0;
 				end
 				40: begin //Load Halfword and Zero
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0;	isAlgebraic1 <= 0; loadStoreFormat1 <= HalfWord;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0;	isAlgebraic1 <= 0; loadStoreFormat1 <= HalfWord; isByteReversal <= 0;
 				end
 				41: begin //Load Halfword and Zero with Update
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1;	isAlgebraic1 <= 0; loadStoreFormat1 <= HalfWord;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1;	isAlgebraic1 <= 0; loadStoreFormat1 <= HalfWord; isByteReversal <= 0;
 				end
 				42: begin //Load Halfword Algebraic
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0;	isAlgebraic1 <= 1; loadStoreFormat1 <= HalfWord;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0;	isAlgebraic1 <= 1; loadStoreFormat1 <= HalfWord; isByteReversal <= 0;
 				end
 				43: begin //Load Halfword Algebraic with Update	
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1;	isAlgebraic1 <= 1; loadStoreFormat1 <= HalfWord;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1;	isAlgebraic1 <= 1; loadStoreFormat1 <= HalfWord; isByteReversal <= 0;
 				end			
 				44: begin //Store Halfword
-					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 0;	isAlgebraic1 <= 0; loadStoreFormat1 <= HalfWord;
+					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 0;	isAlgebraic1 <= 0; loadStoreFormat1 <= HalfWord; isByteReversal <= 0;
 				end
 				45: begin //Store Halfword with Update	
-					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 1;	isAlgebraic1 <= 0; loadStoreFormat1 <= HalfWord;
+					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 1;	isAlgebraic1 <= 0; loadStoreFormat1 <= HalfWord; isByteReversal <= 0;
 				end			
 				default: begin stage1Enable <= 0; end//invalid instruction				
 			endcase end
@@ -119,67 +120,68 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 			blockIndex1 <= (operand2_i + operand3_i) % 16;//the index in the block to load
 			case(xOpCode_i)//parse X format Load/Stores
 				87: begin //Load Byte and Zero Indexed
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0; isAlgebraic1 <= 0; loadStoreFormat1 <= Byte;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0; isAlgebraic1 <= 0; loadStoreFormat1 <= Byte; isByteReversal <= 0;
 				end
 				119: begin //Load Byte and Zero with Update Indexed
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1; isAlgebraic1 <= 0; loadStoreFormat1 <= Byte;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1; isAlgebraic1 <= 0; loadStoreFormat1 <= Byte; isByteReversal <= 0;
 				end
 				279: begin //Load Halfword and Zero Indexed
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0; isAlgebraic1 <= 0; loadStoreFormat1 <= HalfWord;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0; isAlgebraic1 <= 0; loadStoreFormat1 <= HalfWord; isByteReversal <= 0;
 				end
 				311: begin //Load Halfword and Zero with Update Indexed
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1; isAlgebraic1 <= 0; loadStoreFormat1 <= HalfWord;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1; isAlgebraic1 <= 0; loadStoreFormat1 <= HalfWord; isByteReversal <= 0;
 				end
 				343: begin //Load Halfword Algebraic Indexed
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0; isAlgebraic1 <= 1; loadStoreFormat1 <= HalfWord;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0; isAlgebraic1 <= 1; loadStoreFormat1 <= HalfWord; isByteReversal <= 0;
 				end
 				375: begin //Load Halfword Algebraic with Update Indexed
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1; isAlgebraic1 <= 0; loadStoreFormat1 <= HalfWord;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1; isAlgebraic1 <= 0; loadStoreFormat1 <= HalfWord; isByteReversal <= 0;
 				end
 				23: begin //Load Word and Zero Indexed
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0; isAlgebraic1 <= 0; loadStoreFormat1 <= Word;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0; isAlgebraic1 <= 0; loadStoreFormat1 <= Word; isByteReversal <= 0;
 				end
 				55: begin //Load Word and Zero with Update Indexed
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1; isAlgebraic1 <= 0; loadStoreFormat1 <= Word;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1; isAlgebraic1 <= 0; loadStoreFormat1 <= Word; isByteReversal <= 0;
 				end
 				341: begin //Load Word Algebraic Indexed
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0; isAlgebraic1 <= 1; loadStoreFormat1 <= Word;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0; isAlgebraic1 <= 1; loadStoreFormat1 <= Word; isByteReversal <= 0;
 				end
 				373: begin //Load Word Algebraic with Update Indexed
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1; isAlgebraic1 <= 1; loadStoreFormat1 <= Word;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1; isAlgebraic1 <= 1; loadStoreFormat1 <= Word; isByteReversal <= 0;
 				end
 				21: begin //Load Doubleword Indexed
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0; isAlgebraic1 <= 1; loadStoreFormat1 <= DoubleWord;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0; isAlgebraic1 <= 1; loadStoreFormat1 <= DoubleWord; isByteReversal <= 0;
 				end
 				53: begin //Load Doubleword with Update Indexed
-					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1; isAlgebraic1 <= 1; loadStoreFormat1 <= DoubleWord;
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 1; isAlgebraic1 <= 1; loadStoreFormat1 <= DoubleWord; isByteReversal <= 0;
 				end
 				215: begin //Store Byte Indexed
-					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 0; isAlgebraic1 <= 0; loadStoreFormat1 <= Byte;
+					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 0; isAlgebraic1 <= 0; loadStoreFormat1 <= Byte; isByteReversal <= 0;
 				end
 				247: begin //Store Byte with Update Indexed
-					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 1; isAlgebraic1 <= 0; loadStoreFormat1 <= Byte;
+					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 1; isAlgebraic1 <= 0; loadStoreFormat1 <= Byte; isByteReversal <= 0;
 				end
 				407: begin //Store Halfword Indexed
-					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 0; isAlgebraic1 <= 0; loadStoreFormat1 <= HalfWord;
+					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 0; isAlgebraic1 <= 0; loadStoreFormat1 <= HalfWord; isByteReversal <= 0;
 				end
 				439: begin //Store Halfword with Update Indexed
-					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 1; isAlgebraic1 <= 0; loadStoreFormat1 <= HalfWord;
+					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 1; isAlgebraic1 <= 0; loadStoreFormat1 <= HalfWord; isByteReversal <= 0;
 				end
 				151: begin //Store Word Indexed
-					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 0; isAlgebraic1 <= 0; loadStoreFormat1 <= Word;
+					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 0; isAlgebraic1 <= 0; loadStoreFormat1 <= Word; isByteReversal <= 0;
 				end
 				183: begin //Store Word with Update Indexed
-					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 1; isAlgebraic1 <= 0; loadStoreFormat1 <= Word;
+					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 1; isAlgebraic1 <= 0; loadStoreFormat1 <= Word; isByteReversal <= 0;
 				end
 				149: begin //Store Doubleword Indexed
-					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 0; isAlgebraic1 <= 0; loadStoreFormat1 <= DoubleWord;
+					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 0; isAlgebraic1 <= 0; loadStoreFormat1 <= DoubleWord; isByteReversal <= 0;
 				end
 				181: begin //Store Doubleword with Update Indexed
-					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 1; isAlgebraic1 <= 0; loadStoreFormat1 <= DoubleWord;
+					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 1; isAlgebraic1 <= 0; loadStoreFormat1 <= DoubleWord; isByteReversal <= 0;
 				end
 				/*				
-				790: begin //Load Halfword Byte-Reverse Indexed					
+				790: begin //Load Halfword Byte-Reverse Indexed			
+					stage1Enable <= 1; isStore <= 0; isUpdate1 <= 0; isAlgebraic1 <= 0; loadStoreFormat1 <= HaldWord; isByteReversal <= 1;
 				end				
 				87: begin //Load Word Byte-Reverse Indexed
 				end
@@ -223,6 +225,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	reg [0:regWidth-1] reg1Address_2, reg2Address_2;
 	reg [0:2] loadStoreFormat2;
 	reg isUpdate2, isAlgebraic2;
+	reg isByteReversal2;
 	
 	//perform memory read to fetch the block
 	always @(posedge clock_i)
@@ -233,6 +236,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 			//mem read
 			readBlock <= dataMemory[blockAddress1];//get the block out of memory
 			//pass through
+			isByteReversal2 <= isByteReversal;
 			operand1_2 <= operand1_1; /*operand2_2 <= operand2_1;*/ operand3_2 <= operand3_1;//pass through operands
 			address2 <= address1; blockAddress2 <= blockAddress1; blockIndex2 <= blockIndex1;//pass through the address, block and index
 			reg1Address_2 <= reg1Address_1; reg2Address_2 <= reg2Address_1;//pass through the reg addresses

@@ -48,6 +48,7 @@ parameter Z23 = 25, parameter INVALID = 0
 	input wire [0:formatIndexRange-1] instructionFormat_i,
 	//command out
 	output reg isBranching_o,//tells the flush unit to flush the pipeline
+	output reg [0:addressWidth-1] branchInstructionAddress_o,//this is used to tell branch prediction what the PC of the current branch instruction is
 	output reg [0:addressWidth-1] PC_o
 	);
 	
@@ -60,8 +61,8 @@ parameter Z23 = 25, parameter INVALID = 0
 	
 	//stage 1 regs
 	reg isConditional;//indicates if it's a conditional branch or unconditional branch
-	reg [0:4] BO, BI;//BI specifies which CR bit to test, BO is used to resolve the branch as described in figure 40 of datasheet.
-	reg [0:1] BH;
+	reg [0:4] BO, BI;//BI specifies which CR bit to test.BO is used to resolve the branch as described in figure 40 of datasheet.
+	reg [0:1] BH;//BH indicates what hint is given on how likely the branch is to be taken (not used)
 	reg [32:addressWidth-1] conditionRegVal;
 	reg LK;
 	reg [0:addressWidth-1] CIA1;
@@ -188,6 +189,8 @@ parameter Z23 = 25, parameter INVALID = 0
 		is64Bit2 <= is64Bit1;
 		if(isConditional == 1)
 		begin
+			//NOTE The value of BO encoded in the instruction is as described in figure 40, this is resolved in the decoder which
+			//generates the integer values seen below.
 			case(BO)//check the condition bits
 				0: begin //decrement the CTR then branch if the decremented CRT != 0 (0:63 in 64b mode and 32:63 in 32b mode) and conditionRegVal[BI] == 0														
 					if((currentCountRegMinusOne) != 0 && conditionRegVal[BI] == 0)
@@ -195,50 +198,41 @@ parameter Z23 = 25, parameter INVALID = 0
 					else
 						doBranch <= 0;
 					newCountReg <= currentCountRegMinusOne;//decrement the countReg
-				end
-					
+				end					
 				1: begin //decrement the CTR then branch if the decremented CRT == 0 (0:63 in 64b mode and 32:63 in 32b mode) and conditionRegVal[BI] == 0
 					if((currentCountRegMinusOne) == 0 && conditionRegVal[BI] == 0)
 						doBranch <= 1;
 					else
 						doBranch <= 0;						
 					newCountReg <= currentCountRegMinusOne;//decrement the countReg
-				end
-						
+				end						
 				2: begin //branch if the conditionRegVal[BI] == 0
 					if(conditionRegVal[BI] == 0)
 						doBranch <= 1;
 					else
 						doBranch <= 0;
 					newCountReg <= currentCountReg;
-				end
-						
+				end						
 				3: begin //decrement the CTR then branch if the decremented CRT != 0 (0:63 in 64b mode and 32:63 in 32b mode) and CR[BI] == 1
 					if((currentCountRegMinusOne) != 0 && conditionRegVal[BI] == 1)
 						doBranch <= 1;
 					else
 						doBranch <= 0;
-
 					newCountReg <= currentCountRegMinusOne;//decrement the countReg						
-				end
-						
+				end						
 				4: begin //decrement the CTR then branch if the decremented CRT == 0 (0:63 in 64b mode and 32:63 in 32b mode) and CR[BI] == 1
 					if((currentCountRegMinusOne) == 0 && conditionRegVal[BI] == 1)
 						doBranch <= 1;
 					else
 						doBranch <= 0;
-
 					newCountReg <= currentCountRegMinusOne;//decrement the countReg
-				end
-						
+				end						
 				5: begin //branch if the conditionRegVal[BI] == 1
 					if(conditionRegVal[BI] == 1)
 						doBranch <= 1;
 					else
 						doBranch <= 0;
-
-				end
-						
+				end						
 				6: begin //decrement the CTR then branch if the decremented CRT != 0 (0:63 in 64b mode and 32:63 in 32b mode)
 					if((currentCountRegMinusOne) != 0)
 						doBranch <= 1;
@@ -246,17 +240,14 @@ parameter Z23 = 25, parameter INVALID = 0
 						doBranch <= 0;
 
 					newCountReg <= currentCountRegMinusOne;//decrement the countReg
-				end
-						
+				end						
 				7: begin //decrement the CTR then branch if the decremented CRT == 0 (0:63 in 64b mode and 32:63 in 32b mode)
 					if(currentCountRegMinusOne == 0)
 						doBranch <= 1;
 					else
 						doBranch <= 0;
-
 					newCountReg <= currentCountRegMinusOne;//decrement the countReg
-				end
-						
+				end						
 				8: begin
 					//conditional unconditional-branch
 					doBranch <= 1;
@@ -294,6 +285,7 @@ parameter Z23 = 25, parameter INVALID = 0
 				
 			if(doBranch == 1)//if taking a branch
 			begin
+				branchInstructionAddress_o <= CIA2;
 				isBranching_o <= 1;
 				if(is64Bit2)
 					PC <= branchOffset2;
@@ -302,7 +294,7 @@ parameter Z23 = 25, parameter INVALID = 0
 			end
 			else
 			begin//not taking a branch
-				isBranching_o <= 1;
+				isBranching_o <= 0;
 				if(is64Bit2)
 					PC <= CIA2 + 4;
 				else

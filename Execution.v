@@ -30,6 +30,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire [32:63] condReg_i,
 	//command out
 	output wire loadStoreStall, output wire branchStall, output wire isBranching_o,
+	output wire [0:addressSize-1] branchInstructionAddress_o,
 	output wire [0:addressSize-1] pc_o,
 	//reg writebacks
 	output wire [0:2] functionalUnitCode_o,
@@ -122,6 +123,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	.instructionFormat_i(instructionFormat_i),
 	//data out
 	.isBranching_o(isBranching_o),
+	.branchInstructionAddress_o(branchInstructionAddress_o),
 	.PC_o(pc_o)
 	);	
 	
