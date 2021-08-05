@@ -27,8 +27,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire reg2ValOrZero_i,
 		//bits
 	input wire bit1_i, bit2_i,
-	input wire bit1Enable_i, bit2Enable_i,
-		//instructuin info
+	//instruction info
 	input wire [0:addressSize-1] instructionAddress_i,
 	input wire [0:opcodeWidth-1] opCode_i,
 	input wire [0:xOpCodeWidth-1] xOpcode_i,
@@ -40,11 +39,14 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire regReadEnable_i,
 	output reg [0:addressSize-1] regReadOutput_o,	
 	//data in (reg writeback)
-	input wire [0:2] regWritebackFunctionalUnitCode_i,
-	input wire [0:addressSize-1] reg1WritebackData_i, reg2WritebackData_i,
-	input wire reg1isWriteback_i, reg2isWriteback_i,
-	input wire [0:regWidth-1] reg1WritebackAddress_i, reg2WritebackAddress_i,
-	input wire is64Bit_i,
+	//input wire [0:2] regWritebackFunctionalUnitCode_i,// NOT NEEDED. We shouldn't need to identify what type of instruction is retiring
+	input wire [0:addressSize-1] fxReg1WritebackData_i, fxReg2WritebackData_i,
+	input wire fxReg1isWriteback_i, fxReg2isWriteback_i,
+	input wire [0:regWidth-1] fxReg1WritebackAddress_i, fxReg2WritebackAddress_i,
+	//input wire is64Bit_i, NOT NEEDED. Instructions that change is64Bit can complete in the reg file
+	//condition reg update
+	input wire condRegUpdateEnable_i,
+	input wire [32:63] newCRVal_i,
 	//command out
 	output reg stall_o,
 	//data out (reg read)
@@ -59,7 +61,8 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	output reg [0:opcodeWidth-1] opCode_o,
 	output reg [0:xOpCodeWidth-1] xOpCode_o,
 	output reg [0:2] functionalUnitCode_o,
-	output reg [0:formatIndexRange-1] instructionFormat_o
+	output reg [0:formatIndexRange-1] instructionFormat_o,
+	output reg [32:63] conditionRegisterOutput_o
 	);
 	integer i;
 	
@@ -96,7 +99,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		begin
 			enable_o <= 0;
 			stall_o <= 0;
-			is64Bit <= 1;//default to 64 bit mode
+			is64Bit <= 1;//default to 64 bit mode			
 			conditionRegister <= 0;
 			for(i = 0; i < numRegs; i = i + 1)//reset all registers to not pending a writeback
 			begin
@@ -123,25 +126,19 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 			else
 			begin
 				enable_o <= 1;
-				stall_o <= 0;			
-				if(bit1Enable_i == 1)//output bits
-				begin
-					bit1_o <= bit1_i;
-				end
-					
-				if(bit2Enable_i == 1)
-				begin
-					bit2_o <= bit2_i;
-				end
+				stall_o <= 0;
+				//output bits
+				bit1_o <= bit1_i;				
+				bit2_o <= bit2_i;	
 
 					
 				//pass through instruction data
-				opCode_o <= opCode_i;
+				opCode_o <= opCode_i;				
 				if(xOpCodeEnabled_i == 1)
 				begin
 					xOpCode_o <= xOpcode_i;
 				end
-				
+				conditionRegisterOutput_o <= conditionRegister;//write out the condition register
 				instructionFormat_o <= instructionFormat_i;
 				instructionAddress_o <= instructionAddress_i;
 				functionalUnitCode_o <= functionalUnitCode_i;
@@ -166,6 +163,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 					
 				if(reg2Enable_i == 1)
 				begin
+				
 					//$display("Reg 2 enabled");
 					if(reg2ValOrZero_i == 1)
 					begin
@@ -202,10 +200,12 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 							3:begin operand2_o <= FXRegFile[reg2_i]; operand2Writeback_o <= 1; reg2Address_o <= reg2_i; FXPendingWritebackTab[reg2_i] <= 1; end//reg = read/write
 						endcase
 					end
+					
 				end
 				
 				if(reg3Enable_i == 1)
 				begin
+				
 					if(reg3IsImmediate_i == 1)
 					begin
 						case(reg3Use_i)
@@ -224,7 +224,9 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 							3:begin operand3_o <= FXRegFile[reg3_i]; operand3Writeback_o <= 1; reg3Address_o <= reg3_i; FXPendingWritebackTab[reg3_i] <= 1; end//reg = read/write
 						endcase
 					end
+					
 				end
+				
 			end
 		end
 		else
@@ -235,52 +237,23 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		
 		//reg writeback
 		if(reset_i == 0)
-		begin			
-			case(regWritebackFunctionalUnitCode_i)
-				//Fixed point writeback
-				FXUnitCode: begin
-					//$display("Load store writeback");
-					if(reg1isWriteback_i == 1)
-					begin
-						//$display("reg 1 writeback. Writing %d to reg %d", reg1WritebackData_i, reg1WritebackAddress_i);
-						FXRegFile[reg1WritebackAddress_i] <= reg1WritebackData_i;
-						FXPendingWritebackTab[reg1WritebackAddress_i] <= 0;//reset the iswritebackpending flag for the register
-						is64Bit <= is64Bit_i;
-					end
-					if(reg2isWriteback_i == 1)
-					begin
-						conditionRegister <= reg2WritebackAddress_i[0:4];//set the condition reg
-						//FXExceptionRegister[some bits] <= reg1WritebackData_i[some bits]; TODO: UPDATE THIS REG 
-					end
-				end
-				
-				//Floating point writeback
-				FPUnitCode: begin end
-				
-				//Load Store writeback
-				LdStUnitCode: begin
-					//$display("Load store writeback");
-					if(reg1isWriteback_i == 1)
-					begin
-						//$display("reg 1 writeback. Writing %d to reg %d", reg1WritebackData_i, reg1WritebackAddress_i);
-						FXRegFile[reg1WritebackAddress_i] <= reg1WritebackData_i;
-						FXPendingWritebackTab[reg1WritebackAddress_i] <= 0;//reset the iswritebackpending flag for the register
-						is64Bit <= is64Bit_i;
-					end
-					if(reg2isWriteback_i == 1)
-					begin
-						//$display("reg 2 writeback. Writing %d to reg %d", reg2WritebackData_i, reg2WritebackAddress_i);
-						FXRegFile[reg2WritebackAddress_i] <= reg2WritebackData_i;
-						FXPendingWritebackTab[reg2WritebackAddress_i] <= 0;
-						is64Bit <= is64Bit_i;
-					end
-				end
-				
-				//probably dont need these
-				//BranchUnitCode: begin end
-				//TrapUnitCode: begin end
-				default: begin end
-			endcase
+		begin
+			if(condRegUpdateEnable_i == 1)//update the condition reg
+			begin
+				conditionRegister <= newCRVal_i;
+			end
+			if(fxReg1isWriteback_i == 1)//update FX reg 1
+			begin
+				//$display("reg 1 writeback. Writing %d to reg %d", reg1WritebackData_i, reg1WritebackAddress_i);
+				FXRegFile[fxReg1WritebackAddress_i] <= fxReg1WritebackData_i;
+				FXPendingWritebackTab[fxReg1WritebackAddress_i] <= 0;//reset the iswritebackpending flag for the register
+			end
+			if(fxReg2isWriteback_i == 1)//update FX reg 2
+			begin
+				//$display("reg 2 writeback. Writing %d to reg %d", reg2WritebackData_i, reg2WritebackAddress_i);
+				FXRegFile[fxReg2WritebackAddress_i] <= fxReg2WritebackData_i;
+				FXPendingWritebackTab[fxReg2WritebackAddress_i] <= 0;//reset the iswritebackpending flag for the register
+			end
 		end
 	end
 	

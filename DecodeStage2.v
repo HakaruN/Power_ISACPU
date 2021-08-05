@@ -65,7 +65,6 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 	output reg reg1Enable_o, reg2Enable_o, reg3Enable_o,
 	output reg reg3IsImmediate_o,
 	output reg bit1_o, bit2_o,
-	output reg bit1Enable_o, bit2Enable_o,
 	output reg reg2ValOrZero,
 	output reg [0:63] instructionAddress_o,
 	output reg [0:opcodeWidth-1]opcode_o,
@@ -112,8 +111,6 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 					3:imm_o <= {dImm_i, 32'h0000_0000};
 				endcase
 			end
-			//bits
-			bit1Enable_o <= 0; bit2Enable_o <= 0;
 		end
 		
 		else if(dQEnable_i == 1)//All dq instructions are implicitly reg2ValOrZero=1 and imm shift up 4 bits
@@ -133,7 +130,6 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 			imm_o <= $signed({dQImm_i, 4'b0000});
 			//bits
 			bit1_o <= dQBit_i;
-			bit1Enable_o <= 1; bit2Enable_o <= 0;	
 			//functional unit code
 			functionalUnitCode_o <= dQfunctionalUnitCode_i;
 		end
@@ -153,8 +149,7 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 			immEnable_o <= 1;
 			imm_o <= $signed({dSImm_i, 2'b00});
 			//bits
-			bit1_o <= dQBit_i;
-			bit1Enable_o <= 1; bit2Enable_o <= 0;		
+			bit1_o <= dQBit_i;	
 			//functional unit code
 			functionalUnitCode_o <= dSfunctionalUnitCode_i;			
 		end
@@ -175,7 +170,6 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 			immEnable_o <= 0;
 			//bits
 			bit1_o <= xBit1_i;
-			bit1Enable_o <= 1; bit2Enable_o <= 0;	
 			//functional unit code
 			functionalUnitCode_o <= xfunctionalUnitCode_i;					
 		end
@@ -196,7 +190,6 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 			imm_o <= mDImm_i;
 			//bits
 			bit1_o <= mDBit1_i; bit2_o <= mDBit2_i;
-			bit1Enable_o <= 1; bit2Enable_o <= 1;	
 			//functional unit code
 			functionalUnitCode_o <= mDfunctionalUnitCode_i;	
 		end
@@ -217,7 +210,6 @@ module DecodeStage2 #(parameter opcodeWidth = 6, parameter regWidth = 5, paramet
 			immEnable_o <= 0;
 			//bits
 			bit1_o <= xOit1_i; bit2_o <= xOBit2_i;
-			bit1Enable_o <= 1; bit2Enable_o <= 1;	
 			//functional unit code
 			functionalUnitCode_o <= xOfunctionalUnitCode_i;	
 		end

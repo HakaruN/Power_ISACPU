@@ -139,7 +139,6 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	.reg1Enable_o(decodeReg1Enable), .reg2Enable_o(decodeReg2Enable), .reg3Enable_o(decodeReg3Enable),
 	.reg3IsImmediate_o(decodeReg3IsImmediate),
 	.bit1_o(decodeBit1), .bit2_o(decodeBit2),
-	.bit1Enable_o(decodeBit1Enabled), .bit2Enable_o(decodeBit2Enabled),
 	.reg2ValOrZero_o(decodeReg2ValOrZero),
 	.instructionAddress_o(decodeInstructionAddress),
 	.opCode_o(decodeOpCode),
@@ -163,6 +162,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	wire [0:2] RegOutFunctionalUnitCode;
 	wire [0:formatIndexRange-1] RegOutInstructionFormat;
 	wire RegOutis64Bit;
+	wire [32:63] RegOutConditionReg;
 
 	//functional unit outputs (reg writeback)
 	wire ExecLoadStoreStallOut;
@@ -171,6 +171,9 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	wire ExecReg1WritebackEnable, ExecReg2WritebackEnable;
 	wire [0:regWidth-1] ExecReg1WritebackAddress, ExecReg2WritebackAddress;
 	wire [0:63] ExecReg1WritebackVal, ExecReg2WritebackVal;
+	wire ExecCondRegUpdateEnable;
+	wire [32:63] ExecNewCRVal;
+	
 	
 	//regfile stall
 	wire regFileStallOut;
@@ -204,10 +207,13 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	.regReadEnable_i(regReadEnable_i),
 	.regReadOutput_o(regReadOutput_o),
 	 //reg write in	
-	 .regWritebackFunctionalUnitCode_i(ExecFunctionalUnitCodeOut),
-    .reg1WritebackData_i(ExecReg1WritebackVal), .reg2WritebackData_i(ExecReg2WritebackVal), 
-    .reg1isWriteback_i(ExecReg1WritebackEnable), .reg2isWriteback_i(ExecReg2WritebackEnable), 
-	 .reg1WritebackAddress_i(ExecReg1WritebackAddress), .reg2WritebackAddress_i(ExecReg2WritebackAddress),	 
+	 //.regWritebackFunctionalUnitCode_i(ExecFunctionalUnitCodeOut),
+    .fxReg1WritebackData_i(ExecReg1WritebackVal), .fxReg2WritebackData_i(ExecReg2WritebackVal), 
+    .fxReg1isWriteback_i(ExecReg1WritebackEnable), .fxReg2isWriteback_i(ExecReg2WritebackEnable), 
+	 .fxReg1WritebackAddress_i(ExecReg1WritebackAddress), .fxReg2WritebackAddress_i(ExecReg2WritebackAddress),	 
+	//condition reg update
+	.condRegUpdateEnable_i(ExecCondRegUpdateEnable),
+	.newCRVal_i(ExecNewCRVal),
 	 //command out
     .stall_o(regFileStallOut), 
 	 //reg read out
@@ -221,7 +227,8 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
     .opCode_o(RegOutOpCode),
     .xOpCode_o(RegOutXOpCode),
 	 .functionalUnitCode_o(RegOutFunctionalUnitCode),
-    .instructionFormat_o(RegOutInstructionFormat)
+    .instructionFormat_o(RegOutInstructionFormat),
+	 .conditionRegisterOutput_o(RegOutConditionReg),
     );
 	
 	//exec units
@@ -243,6 +250,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		.instructionAddress_i(RegOutInstructionAddress),
 		.opCode_i(RegOutOpCode), .xOpCode_i(RegOutXOpCode),
 		.instructionFormat_i(RegOutInstructionFormat),
+		.condReg_i(RegOutConditionReg),
 		//command out
 		.loadStoreStall(ExecLoadStoreStallOut), .branchStall(ExecBranchStallOut),
 		.isBranching_o(), .pc_o(PC),
@@ -250,7 +258,9 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		.functionalUnitCode_o(ExecFunctionalUnitCodeOut),
 		.reg1WritebackEnable_o(ExecReg1WritebackEnable), .reg2WritebackEnable_o(ExecReg2WritebackEnable),
 		.reg1WritebackAddress_o(ExecReg1WritebackAddress), .reg2WritebackAddress_o(ExecReg2WritebackAddress),
-		.reg1WritebackVal_o(ExecReg1WritebackVal), .reg2WritebackVal_o(ExecReg2WritebackVal)
+		.reg1WritebackVal_o(ExecReg1WritebackVal), .reg2WritebackVal_o(ExecReg2WritebackVal),
+		.condRegUpdateEnable_o(ExecCondRegUpdateEnable),
+		.newCRVal_o(ExecNewCRVal),
 	);
 	
 

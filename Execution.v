@@ -27,6 +27,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	input wire [0:opcodeWidth-1] opCode_i,
 	input wire [0:xOpCodeWidth-1] xOpCode_i,
 	input wire [0:formatIndexRange-1] instructionFormat_i,
+	input wire [32:63] condReg_i,
 	//command out
 	output wire loadStoreStall, output wire branchStall, output wire isBranching_o,
 	output wire [0:addressSize-1] pc_o,
@@ -34,7 +35,9 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	output wire [0:2] functionalUnitCode_o,
 	output wire reg1WritebackEnable_o, reg2WritebackEnable_o,
 	output wire [0:regWidth-1] reg1WritebackAddress_o, reg2WritebackAddress_o,
-	output wire [0:63] reg1WritebackVal_o, reg2WritebackVal_o
+	output wire [0:63] reg1WritebackVal_o, reg2WritebackVal_o,
+	output wire condRegUpdateEnable_o,
+	output wire [32:63] newCRVal_o
 );
 	
 	wire FXOutputEnable;
@@ -49,6 +52,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		.reset_i(reset_i),
 		.enable_i(enable_i),
 		//data in
+		.condReg_i(condReg_i),
 		.is64Bit_i(is64Bit_i),
 		.functionalUnitCode_i(functionalUnitCode_i),
 		.operand1_i(operand1_i), .operand2_i(operand2_i), .operand3_i(operand3_i),
@@ -107,8 +111,8 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//registers
 	.is64Bit_i(is64Bit_i),
 	//instruction data
-	.operand1_i(operand1_i), .operand2_i(operand2_i), .operand3_i(operand3_i),
-	.reg1Address_i(reg1Address_i), .reg2Address_i(reg2Address_i), .reg3Address_i(reg3Address_i),
+	.condReg_i(condReg_i),
+	.operand1_i(operand1_i[0:4]), .operand2_i(operand2_i[0:4]), .operand3_i(operand3_i[0:1]),
 	.imm_i(imm_i),
 	.bit1_i(bit1_i), .bit2_i(bit2_i),
 	.functionalUnitCode_i(functionalUnitCode_i),
@@ -119,7 +123,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	//data out
 	.isBranching_o(isBranching_o),
 	.PC_o(pc_o)
-	);
+	);	
 	
 	//writeback merge queue
 	WritebackMux writebackMux

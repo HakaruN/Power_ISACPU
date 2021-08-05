@@ -178,9 +178,9 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 				181: begin //Store Doubleword with Update Indexed
 					stage1Enable <= 1; isStore <= 1; isUpdate1 <= 1; isAlgebraic1 <= 0; loadStoreFormat1 <= DoubleWord;
 				end
-				/*
-				87: begin //Load Halfword Byte-Reverse Indexed
-				end
+				/*				
+				790: begin //Load Halfword Byte-Reverse Indexed					
+				end				
 				87: begin //Load Word Byte-Reverse Indexed
 				end
 				87: begin //Store Halfword Byte-Reverse Indexed
@@ -194,6 +194,8 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 			case(opCode_i)//parse DS format Load/Stores
 			
 			endcase end
+			*/
+			/*
 			else if(instructionFormat_i == DQ) begin
 			case(opCode_i)//parse DQ format Load/Stores
 			
