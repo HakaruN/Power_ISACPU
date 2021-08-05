@@ -8,7 +8,11 @@
 //The first stage parses the instruction, calculates branch offsets and resolves if the instruction is a conditional branch or not
 //The second stage resolves the condition to see if the branch is to be taken or not
 //The thirst stage commits the changes to the CPU state
-//NOTE: The branch unit makes no use about the hints given with branch instructions.
+//NOTE: 
+//The branch unit makes no use about the hints given with branch instructions.
+//There is an optimisation made to remove the repeated CountReg subtractions made in stage 2 where stage 1 generates two values of the 
+//Count reg, one is the current value and the other is the current value decremented. This allows the second stage to use either where apropriate.
+//This simpler hardware increased the theoretical clockrate of this unit on my FPGA from ~85Mhz to ~123Mhz
 //////////////////////////////////////////////////////////////////////////////////
 module BranchUnit#(
 //operating parameters
@@ -62,7 +66,7 @@ parameter Z23 = 25, parameter INVALID = 0
 	reg LK;
 	reg [0:addressWidth-1] CIA1;
 	reg [0:addressWidth-1] branchOffset;
-	reg [0:addressWidth-1] currentCountReg;
+	reg [0:addressWidth-1] currentCountReg, currentCountRegMinusOne;
 	reg is64Bit1;
 	
 	//stage 1, parse the branch instruction and check if it's conditional or unconditional
@@ -74,7 +78,7 @@ parameter Z23 = 25, parameter INVALID = 0
 			CIA1 <= instructionAddress_i;
 			is64Bit1 <= is64Bit_i;
 			conditionRegVal <= condReg_i;	
-			currentCountReg <= countReg;
+			currentCountReg <= countReg; currentCountRegMinusOne <= countReg - 1;
 			//unconditional branch
 			if(instructionFormat_i == I && opCode_i == 18)
 			begin					
@@ -185,50 +189,50 @@ parameter Z23 = 25, parameter INVALID = 0
 		if(isConditional == 1)
 		begin
 			case(BO)//check the condition bits
-				0: begin //decrement the CTR then branch if the decremented CRT != 0 (0:63 in 64b mode and 32:63 in 32b mode) and conditionRegVal[BI + 32] == 0														
-					if((currentCountReg - 1) != 0 && conditionRegVal[BI + 32] == 0)
+				0: begin //decrement the CTR then branch if the decremented CRT != 0 (0:63 in 64b mode and 32:63 in 32b mode) and conditionRegVal[BI] == 0														
+					if((currentCountRegMinusOne) != 0 && conditionRegVal[BI] == 0)
 						doBranch <= 1;
 					else
 						doBranch <= 0;
-					newCountReg <= currentCountReg - 1;//decrement the countReg
+					newCountReg <= currentCountRegMinusOne;//decrement the countReg
 				end
 					
-				1: begin //decrement the CTR then branch if the decremented CRT == 0 (0:63 in 64b mode and 32:63 in 32b mode) and conditionRegVal[BI + 32] == 0
-					if((currentCountReg - 1) == 0 && conditionRegVal[BI + 32] == 0)
+				1: begin //decrement the CTR then branch if the decremented CRT == 0 (0:63 in 64b mode and 32:63 in 32b mode) and conditionRegVal[BI] == 0
+					if((currentCountRegMinusOne) == 0 && conditionRegVal[BI] == 0)
 						doBranch <= 1;
 					else
 						doBranch <= 0;						
-					newCountReg <= currentCountReg - 1;//decrement the countReg
+					newCountReg <= currentCountRegMinusOne;//decrement the countReg
 				end
 						
-				2: begin //branch if the conditionRegVal[BI + 32] == 0
-					if(conditionRegVal[BI + 32] == 0)
+				2: begin //branch if the conditionRegVal[BI] == 0
+					if(conditionRegVal[BI] == 0)
 						doBranch <= 1;
 					else
 						doBranch <= 0;
 					newCountReg <= currentCountReg;
 				end
 						
-				3: begin //decrement the CTR then branch if the decremented CRT != 0 (0:63 in 64b mode and 32:63 in 32b mode) and CR[BI + 32] == 1
-					if((currentCountReg - 1) != 0 && conditionRegVal[BI + 32] == 1)
+				3: begin //decrement the CTR then branch if the decremented CRT != 0 (0:63 in 64b mode and 32:63 in 32b mode) and CR[BI] == 1
+					if((currentCountRegMinusOne) != 0 && conditionRegVal[BI] == 1)
 						doBranch <= 1;
 					else
 						doBranch <= 0;
 
-					newCountReg <= currentCountReg - 1;//decrement the countReg						
+					newCountReg <= currentCountRegMinusOne;//decrement the countReg						
 				end
 						
-				4: begin //decrement the CTR then branch if the decremented CRT == 0 (0:63 in 64b mode and 32:63 in 32b mode) and CR[BI + 32] == 1
-					if((currentCountReg - 1) == 0 && conditionRegVal[BI + 32] == 1)
+				4: begin //decrement the CTR then branch if the decremented CRT == 0 (0:63 in 64b mode and 32:63 in 32b mode) and CR[BI] == 1
+					if((currentCountRegMinusOne) == 0 && conditionRegVal[BI] == 1)
 						doBranch <= 1;
 					else
 						doBranch <= 0;
 
-					newCountReg <= currentCountReg - 1;//decrement the countReg
+					newCountReg <= currentCountRegMinusOne;//decrement the countReg
 				end
 						
-				5: begin //branch if the conditionRegVal[BI + 32] == 1
-					if(conditionRegVal[BI + 32] == 1)
+				5: begin //branch if the conditionRegVal[BI] == 1
+					if(conditionRegVal[BI] == 1)
 						doBranch <= 1;
 					else
 						doBranch <= 0;
@@ -236,21 +240,21 @@ parameter Z23 = 25, parameter INVALID = 0
 				end
 						
 				6: begin //decrement the CTR then branch if the decremented CRT != 0 (0:63 in 64b mode and 32:63 in 32b mode)
-					if((currentCountReg - 1) != 0)
+					if((currentCountRegMinusOne) != 0)
 						doBranch <= 1;
 					else
 						doBranch <= 0;
 
-					newCountReg <= currentCountReg - 1;//decrement the countReg
+					newCountReg <= currentCountRegMinusOne;//decrement the countReg
 				end
 						
 				7: begin //decrement the CTR then branch if the decremented CRT == 0 (0:63 in 64b mode and 32:63 in 32b mode)
-					if((currentCountReg - 1) == 0)
+					if(currentCountRegMinusOne == 0)
 						doBranch <= 1;
 					else
 						doBranch <= 0;
 
-					newCountReg <= currentCountReg - 1;//decrement the countReg
+					newCountReg <= currentCountRegMinusOne;//decrement the countReg
 				end
 						
 				8: begin
