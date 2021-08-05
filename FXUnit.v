@@ -38,7 +38,7 @@ parameter arithmatic = 0, parameter compare = 1
 	//outputs
 	output reg [0:2] functionalUnitCode_o,
 	output reg reg1WritebackEnable_o, //reg2WritebackEnable_o,//reg2 enable condition reg writeEnable
-	output reg [0:regWidth-1] reg1WritebackAddress_o, reg2WritebackAddress_o,//reg2 address is used to write back the condition reg bits
+	output reg [0:regWidth-1] reg1WritebackAddress_o,// reg2WritebackAddress_o,//reg2 address is used to write back the condition reg bits
 	output reg [0:63] reg1WritebackVal_o, //reg2WritebackVal_o,//reg2 val is overflow/underflow bits
 	output reg [0:3] CR0_o,//condition register output
 	output reg setSO_o,//sets the sumary overflow in the FX_XER
@@ -126,7 +126,7 @@ parameter arithmatic = 0, parameter compare = 1
 		if(stage1Enabled == 1)
 		begin
 			reg1WritebackEnable_o <= reg1IsWriteback;// reg2WritebackEnable_o <= reg2IsWriteback;//set the writeback enables
-			reg1WritebackAddress_o <= reg1WBAddress; reg2WritebackAddress_o <= reg2WBAddress;
+			reg1WritebackAddress_o <= reg1WBAddress;// reg2WritebackAddress_o <= reg2WBAddress;
 			reg1WritebackVal_o <= intermediateResult[64:127]; //reg2WritebackVal_o <= 
 			
 			if(isOVEnabled)//if OV is enabled, then set OV bit if any of the top intemermediate bits are set

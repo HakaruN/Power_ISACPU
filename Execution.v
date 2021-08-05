@@ -46,6 +46,9 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	wire FXRegWritebackEnable, FXCondRegUpdateEnable;
 	wire [0:regWidth-1] FXReg1WritebackAddress, FXCondRegBits;
 	wire [0:addressSize-1] FXReg1WritebackValue, FXOverFlowUnderFlow;
+	wire [0:3] FXCR0;
+	wire FXSetSO, FXOV, FXCA;
+	
 	//FX (Integer) unit
 	FXUnit fxunit(
 		//command
@@ -53,23 +56,21 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		.reset_i(reset_i),
 		.enable_i(enable_i),
 		//data in
-		.condReg_i(condReg_i),
-		.is64Bit_i(is64Bit_i),
 		.functionalUnitCode_i(functionalUnitCode_i),
 		.operand1_i(operand1_i), .operand2_i(operand2_i), .operand3_i(operand3_i),
-		.reg1Address_i(reg1Address_i), .reg2Address_i(reg2Address_i), .reg3Address_i(reg3Address_i),
+		.reg1Address_i(reg1Address_i),// .reg2Address_i(reg2Address_i), .reg3Address_i(reg3Address_i),
 		.imm_i(imm_i),
 		.bit1_i(bit1_i), .bit2_i(bit2_i),
-		.operand1Writeback_i(operand1Writeback_i), .operand2Writeback_i(operand2Writeback_i), .operand3Writeback_i(operand3Writeback_i),
 		.instructionAddress_i(instructionAddress_i),
 		.opCode_i(opCode_i),
 		.xOpCode_i(xOpCode_i),
 		.instructionFormat_i(instructionFormat_i),
 		//outputs
 		.functionalUnitCode_o(FXFunctionalUnitCode),
-		.reg1WritebackEnable_o(FXRegWritebackEnable), .reg2WritebackEnable_o(FXCondRegUpdateEnable),//reg2 enable condition reg writeEnable
-		.reg1WritebackAddress_o(FXReg1WritebackAddress), .reg2WritebackAddress_o(FXCondRegBits),//reg2 address is used to write back the condition reg bits
-		.reg1WritebackVal_o(FXReg1WritebackValue), .reg2WritebackVal_o(FXOverFlowUnderFlow)//reg2 val is overflow/underflow bits	
+		.reg1WritebackEnable_o(FXRegWritebackEnable),// .reg2WritebackEnable_o(FXCondRegUpdateEnable),//reg2 enable condition reg writeEnable
+		.reg1WritebackAddress_o(FXReg1WritebackAddress),// .reg2WritebackAddress_o(FXCondRegBits),//reg2 address is used to write back the condition reg bits
+		.reg1WritebackVal_o(FXReg1WritebackValue),// .reg2WritebackVal_o(FXOverFlowUnderFlow)//reg2 val is overflow/underflow bits	
+		.CR0_o(FXCR0), .setSO_o(FXSetSO), .OV_o(FXOV), .CA_o(FXCA)
 	);
 	
 	

@@ -59,212 +59,80 @@ parameter Z23 = 25, parameter INVALID = 0
 	reg [0:addressWidth-1] TargetAddrReg;//TAR
 	
 	
-	//stage 1 regs
-	reg isConditional;//indicates if it's a conditional branch or unconditional branch
-	reg [0:4] BO, BI;//BI specifies which CR bit to test.BO is used to resolve the branch as described in figure 40 of datasheet.
-	reg [0:1] BH;//BH indicates what hint is given on how likely the branch is to be taken (not used)
-	reg [32:addressWidth-1] conditionRegVal;
-	reg LK;
-	reg [0:addressWidth-1] CIA1;
-	reg [0:addressWidth-1] branchOffset;
-	reg [0:addressWidth-1] currentCountReg, currentCountRegMinusOne;
-	reg is64Bit1;
 	
-	//stage 1, parse the branch instruction and check if it's conditional or unconditional
-	always @(posedge clock_i)
-	begin
-		if(stall_i == 0 && enable_i == 1 && reset_i == 0 && functionalUnitCode_i == BranchUnitCode)
-		begin				
-			//update CPU and instruction state
-			CIA1 <= instructionAddress_i;
-			is64Bit1 <= is64Bit_i;
-			conditionRegVal <= condReg_i;	
-			currentCountReg <= countReg; currentCountRegMinusOne <= countReg - 1;
-			//unconditional branch
-			if(instructionFormat_i == I && opCode_i == 18)
-			begin					
-				isConditional <= 0;//set instruction to be a unconditional branch
-				//offset + the CIA * AA + instruction size. If AA == 0 then it's an absalute offset + 4 else it's relative
-				branchOffset <= $signed({imm_i, 2'b00}) + (instructionAddress_i * bit1_i) + 4;
-				LK <= bit2_i;
-			end
-			
-			//branch conditional
-			else if(instructionFormat_i == B && opCode_i == 16)
-			begin
-				isConditional <= 1;
-				BO <= operand1_i; BI <= operand2_i + 32;
-				branchOffset <= $signed({imm_i, 2'b00}) + (instructionAddress_i * bit1_i) + 4;
-				LK <= bit2_i;					
-			end
+	//Stage 1 outputs
+	wire isConditional;
+	wire [0:4] BO;
+	wire [0:5] BI;
+	wire [0:1] BH;
+	wire [32:addressWidth-1] conditionRegVal;
+	wire LK;
+	wire [0:addressWidth-1] CIA;
+	wire [0:addressWidth-1] branchOffset;
+	wire [0:addressWidth-1] currentCountReg, currentCountRegMinusOne;
+	wire is64Bit;	
+	
+	//Stage 1 of the branch unit
+	BranchStage1 branchStage1(
+	//command
+	.clock_i(clock_i), .reset_i(reset_i),
+	.stall_i(stall_i), .enable_i(enable_i),
+	//Reg data in
+	.is64Bit_i(is64Bit_i), 
+	.countReg_i(countReg), .linkReg_i(linkReg), .TargetAddrReg_i(TargetAddrReg),
+	//instruction data in
+	.condReg_i(condReg_i),
+	.operand1_i(operand1_i), .operand2_i(operand2_i),
+	.operand3_i(operand3_i),
+	.imm_i(imm_i),
+	.Bit1_i(bit1_i), .Bit2_i(bit2_i),
+	.functionalUnitCode_i(functionalUnitCode_i),
+	.instructionAddress_i(instructionAddress_i),
+	.opCode_i(opCode_i),
+	.xOpCode_i(xOpCode_i),
+	.instructionFormat_i(instructionFormat_i),
+	//data out
+	.isConditional_o(isConditional),
+	.BO_o(BO), .BI_o(BI),
+	.BH_o(BH),
+	.conditionRegVal_o(conditionRegVal),
+	.LK_o(LK),
+	.CIA_o(CIA),
+	.branchOffset_o(branchOffset),
+	.currentCountReg_o(currentCountReg), .currentCountRegMinusOne_o(currentCountRegMinusOne), 
+	.is64Bit_o(is64Bit)	
+	);
 		
-			else if(instructionFormat_i == XL && opCode_i == 19)
-			begin
-				case(xOpCode_i)
-					16: begin//Branch Conditional to Link Register
-						isConditional <= 1;
-						BO <= operand1_i; BI <= operand2_i + 32; BH <= operand3_i;
-						branchOffset <= {linkReg[0:61],2'b00};//offset to the link reg (4 Byte aligned)
-						LK <= bit2_i;
-					end
-					528: begin//Branch Conditional to Count Register
-						isConditional <= 1;
-						BO <= operand1_i; BI <= operand2_i + 32; BH <= operand3_i;
-						branchOffset <= {countReg[0:61],2'b00};//offset to the count reg (4 Byte aligned)
-						LK <= bit2_i;
-					end
-					560: begin//Branch Conditional to TAR
-						isConditional <= 1;
-						BO <= operand1_i; BI <= operand2_i + 32; BH <= operand3_i;
-						branchOffset <= {TargetAddrReg[0:61],2'b00};//offset to the TAR (4 Byte aligned)
-						LK <= bit2_i;
-					end
-				endcase
-			end
-					/* TODO: Move to a Condition Register functional Unit
-					conditionRegBitIdx_o <= operand1_i[63-:5];
-					if(instructionFormat_i == XL && opCode_i == 19 && functionalUnitCode_i == CRUnitCode)
-					begin
-						conditionRegBitIdx_o <= operand1_i[63-:5];
-						case(xOpCode_i)
-						257: begin//condition reg AND
-							conditionRegBit_o <= condReg_i[operand2_i[63-:5] & condReg_i[operand3_i[63-:5];
-						end
-						449: begin//condition reg OR
-							conditionRegBit_o <= condReg_i[operand2_i[63-:5] | condReg_i[operand3_i[63-:5];
-						end
-						225: begin//condition reg NAND
-							conditionRegBit_o <= condReg_i[operand2_i[63-:5] ~& condReg_i[operand3_i[63-:5];
-						end
-
-						193: begin//condition reg XOR 
-							conditionRegBit_o <= condReg_i[operand2_i[63-:5] ^ condReg_i[operand3_i[63-:5];							
-						end
-						33: begin//condition reg NOR 
-							conditionRegBit_o <= condReg_i[operand2_i[63-:5] ~| condReg_i[operand3_i[63-:5];	
-						end
-						129:begin//condition reg AND with Compliment
-							conditionRegBit_o <= condReg_i[operand2_i[63-:5] & (~condReg_i[operand3_i[63-:5]);						
-						end
-						289: begin//condition reg Equivelent
-							conditionRegBit_o <= ~(condReg_i[operand2_i[63-:5] ^ condReg_i[operand3_i[63-:5]);	
-						end
-						417: begin//condition reg OR with Compliment
-							conditionRegBit_o <= condReg_i[operand2_i[63-:5] | (~condReg_i[operand3_i[63-:5]);
-						end
-						
-						// This could be implemented in the reg file
-						0: begin//move condition reg field
-							//move one of the groups of 4 bits from one CR field to another
-							//Operand 1 indicates the destination, operand 2 indicates the field to copy.
-						end
-						default: begin
-							//Throw Error
-						end
-					end
-					*/
-			/*System call instructions not implemented
-			else if(instructionFormat_i == SC)
-			begin
-			
-			end
-			*/
-		end
-	end
-
-	//stage 2 output registers
-	reg [0:addressWidth-1] CIA2;
-	reg [0:addressWidth-1] branchOffset2;
-	reg is64Bit2;
-	reg doBranch;
-	reg LK2;		
-	reg [0:addressWidth-1] newCountReg;	
-	
-	//stage 2, resolves if a branch is to be taken or not
-	always @(posedge clock_i)
-	begin
-		CIA2 <= CIA1;
-		branchOffset2 <= branchOffset;
-		LK2 <= LK;
-		is64Bit2 <= is64Bit1;
-		if(isConditional == 1)
-		begin
-			//NOTE The value of BO encoded in the instruction is as described in figure 40, this is resolved in the decoder which
-			//generates the integer values seen below.
-			case(BO)//check the condition bits
-				0: begin //decrement the CTR then branch if the decremented CRT != 0 (0:63 in 64b mode and 32:63 in 32b mode) and conditionRegVal[BI] == 0														
-					if((currentCountRegMinusOne) != 0 && conditionRegVal[BI] == 0)
-						doBranch <= 1;
-					else
-						doBranch <= 0;
-					newCountReg <= currentCountRegMinusOne;//decrement the countReg
-				end					
-				1: begin //decrement the CTR then branch if the decremented CRT == 0 (0:63 in 64b mode and 32:63 in 32b mode) and conditionRegVal[BI] == 0
-					if((currentCountRegMinusOne) == 0 && conditionRegVal[BI] == 0)
-						doBranch <= 1;
-					else
-						doBranch <= 0;						
-					newCountReg <= currentCountRegMinusOne;//decrement the countReg
-				end						
-				2: begin //branch if the conditionRegVal[BI] == 0
-					if(conditionRegVal[BI] == 0)
-						doBranch <= 1;
-					else
-						doBranch <= 0;
-					newCountReg <= currentCountReg;
-				end						
-				3: begin //decrement the CTR then branch if the decremented CRT != 0 (0:63 in 64b mode and 32:63 in 32b mode) and CR[BI] == 1
-					if((currentCountRegMinusOne) != 0 && conditionRegVal[BI] == 1)
-						doBranch <= 1;
-					else
-						doBranch <= 0;
-					newCountReg <= currentCountRegMinusOne;//decrement the countReg						
-				end						
-				4: begin //decrement the CTR then branch if the decremented CRT == 0 (0:63 in 64b mode and 32:63 in 32b mode) and CR[BI] == 1
-					if((currentCountRegMinusOne) == 0 && conditionRegVal[BI] == 1)
-						doBranch <= 1;
-					else
-						doBranch <= 0;
-					newCountReg <= currentCountRegMinusOne;//decrement the countReg
-				end						
-				5: begin //branch if the conditionRegVal[BI] == 1
-					if(conditionRegVal[BI] == 1)
-						doBranch <= 1;
-					else
-						doBranch <= 0;
-				end						
-				6: begin //decrement the CTR then branch if the decremented CRT != 0 (0:63 in 64b mode and 32:63 in 32b mode)
-					if((currentCountRegMinusOne) != 0)
-						doBranch <= 1;
-					else
-						doBranch <= 0;
-
-					newCountReg <= currentCountRegMinusOne;//decrement the countReg
-				end						
-				7: begin //decrement the CTR then branch if the decremented CRT == 0 (0:63 in 64b mode and 32:63 in 32b mode)
-					if(currentCountRegMinusOne == 0)
-						doBranch <= 1;
-					else
-						doBranch <= 0;
-					newCountReg <= currentCountRegMinusOne;//decrement the countReg
-				end						
-				8: begin
-					//conditional unconditional-branch
-					doBranch <= 1;
-					newCountReg <= currentCountReg;//preserve the countReg
-				end
-				default: begin//no branch condition satisfied
-					//throw error
-				end					
-			endcase
-		end
-		else//unconditonal branch instruction
-		begin
-			doBranch <= 1;
-			newCountReg <= currentCountReg;//preserve the countReg
-		end
-	end
-	
+	//stage 2 output
+	wire [0:addressWidth-1] CIA2;
+	wire [0:addressWidth-1] branchOffset2;
+	wire is64Bit2;
+	wire doBranch;
+	wire LK2;		
+	wire [0:addressWidth-1] newCountVal;		
+	//stage 2
+	BranchStage2 branchStage2(
+	//input
+	.clock_i(clock_i),
+	//command out
+	.isConditional_i(isConditional),
+	.BO_i(BO),
+	.BI_i(BI),
+	.BH_i(BH),
+	.conditionRegVal_i(conditionRegVal),
+	.LK_i(LK),
+	.CIA_i(CIA),
+	.branchOffset_i(branchOffset),
+	.currentCountReg_i(currentCountReg), .currentCountRegMinusOne_i(currentCountRegMinusOne), 
+	.is64Bit_i(is64Bit),
+	//output
+	.CIA_o(CIA2),
+	.branchOffset_o(branchOffset2),
+	.is64Bit_o(is64Bit2),
+	.doBranch_o(doBranch),
+	.LK_o(LK2),	
+	.newCountReg_o(newCountVal)
+	);
 	
 
 	//stage 3 commits the changes to the CPU state
@@ -274,14 +142,14 @@ parameter Z23 = 25, parameter INVALID = 0
 		begin
 			PC <= resetVector;
 			countReg <= 0;
-			isBranching_o <= 0;
+			linkReg <= 0;
 		end
 		else			
 		begin		
 			PC_o <= PC;//set the PC output			
 			if(LK2 == 1)//update link reg
 				linkReg <= CIA2 + 4;			
-			countReg <= newCountReg;//update the count reg
+			countReg <= newCountVal;//update the count reg
 				
 			if(doBranch == 1)//if taking a branch
 			begin

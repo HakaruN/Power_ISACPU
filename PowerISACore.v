@@ -108,7 +108,6 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	wire decodeReg3IsImmediate;
 	//bits
 	wire decodeBit1, decodeBit2;
-	wire decodeBit1Enabled, decodeBit2Enabled;
 	//instruction info
 	wire decodeReg2ValOrZero;
 	wire [0:addressSize-1] decodeInstructionAddress;
@@ -190,7 +189,6 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 	.reg1_i(decodeReg1), .reg2_i(decodeReg2), .reg3_i(decodeReg3), 
 		//bits
 	.bit1_i(decodeBit1), .bit2_i(decodeBit2), 
-	.bit1Enable_i(decodeBit1Enabled), .bit2Enable_i(decodeBit2Enabled), 
 		//regs
 	.reg1Use_i(reg1Use), .reg2Use_i(reg2Use), .reg3Use_i(reg3Use), 
 	.reg3IsImmediate_i(decodeReg3IsImmediate), 
@@ -228,7 +226,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
     .xOpCode_o(RegOutXOpCode),
 	 .functionalUnitCode_o(RegOutFunctionalUnitCode),
     .instructionFormat_o(RegOutInstructionFormat),
-	 .conditionRegisterOutput_o(RegOutConditionReg),
+	 .conditionRegisterOutput_o(RegOutConditionReg)
     );
 	
 	//exec units
@@ -260,7 +258,7 @@ parameter FXUnitCode = 0, parameter FPUnitCode = 1, parameter LdStUnitCode = 2, 
 		.reg1WritebackAddress_o(ExecReg1WritebackAddress), .reg2WritebackAddress_o(ExecReg2WritebackAddress),
 		.reg1WritebackVal_o(ExecReg1WritebackVal), .reg2WritebackVal_o(ExecReg2WritebackVal),
 		.condRegUpdateEnable_o(ExecCondRegUpdateEnable),
-		.newCRVal_o(ExecNewCRVal),
+		.newCRVal_o(ExecNewCRVal)
 	);
 	
 
